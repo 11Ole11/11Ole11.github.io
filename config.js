@@ -52,7 +52,7 @@ const OVERLAYS = [
     name    : "Sociabuzz Subathon",
     url     : "https://sociabuzz.com/pro/tribe/timer/v2/7264966058",
     enabled : true,
-    x: 0,  y: 600,
+    x: 0,  y: 800,
     width: "100%",  height: "100%",
     zIndex: 13,  opacity: 1
   },
@@ -113,8 +113,8 @@ const OVERLAYS = [
 
   {
     name    : "TikFinity Alert 1",
-    url     : "",        // ← Isi link overlay TikFinity di sini
-    enabled : false,
+    url     : "https://tikfinity.zerody.one/widget/myactions?cid=3456048&screen=1",        // ← Isi link overlay TikFinity di sini
+    enabled : true,
     x: 0,  y: 0,
     width: "100%",  height: "100%",
     zIndex: 20,  opacity: 1
