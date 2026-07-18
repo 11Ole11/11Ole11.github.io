@@ -29,7 +29,7 @@ const OVERLAYS = [
     url     : "https://sociabuzz.com/pro/tribe/alert1/v3/7264966058?colorName=%2300ff00&alphaName=1&colorNote=%23ffff00&alphaNote=1&colorFrom=%23eeeeee&alphaFrom=1&gifActive=1&maxDuration=25&font=Open%2BSans%3A800",        // ← Isi link overlay Sociabuzz di sini
     enabled : true,
     x: 0,  y: 0,
-    width: "100%",  height: "100%",
+    width: "60%",  height: "60%",
     zIndex: 10,  opacity: 1
   },
   {
@@ -44,24 +44,24 @@ const OVERLAYS = [
     name    : "Sociabuzz Top Leaderboard",
     url     : "https://sociabuzz.com/pro/tribe/topleaderboard/v2/7264966058",
     enabled : true,
-    x: 0,  y: 0,
-    width: "100%",  height: "100%",
+    x: 0,  y: 650,
+    width: "50%",  height: "70%",
     zIndex: 12,  opacity: 1
   },
   {
     name    : "Sociabuzz Subathon",
     url     : "https://sociabuzz.com/pro/tribe/timer/v2/7264966058",
     enabled : true,
-    x: 0,  y: 800,
-    width: "100%",  height: "100%",
+    x: 50,  y: 650,
+    width: "40%",  height: "40%",
     zIndex: 13,  opacity: 1
   },
   {
-    name    : "Sociabuzz Alert 5",
-    url     : "",
-    enabled : false,
-    x: 0,  y: 0,
-    width: "100%",  height: "100%",
+    name    : "Sociabuzz Milestone",
+    url     : "https://sociabuzz.com/pro/tribe/total/v2/7264966058",
+    enabled : true,
+    x: 0,  y: 500,
+    width: "50%",  height: "30%",
     zIndex: 14,  opacity: 1
   },
   {
