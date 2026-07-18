@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Transparent Overlay Aggregator • Minimal</title>
+  <title>Overlay Aggregator • Auto-URL</title>
   <style>
     :root {
       --accent: #38bdf8;
       --danger: #f87171;
-      --warning: #fbbf24;
     }
 
     * {
@@ -32,7 +31,6 @@
       z-index: 1;
     }
 
-    /* Overlay item */
     .overlay-item {
       position: absolute;
       min-width: 40px;
@@ -100,7 +98,6 @@
       object-fit: contain;
     }
 
-    /* Label kecil */
     .overlay-label {
       position: absolute;
       top: -22px;
@@ -123,7 +120,6 @@
       opacity: 1;
     }
 
-    /* Resize handles */
     .resize-handle {
       position: absolute;
       z-index: 35;
@@ -156,7 +152,6 @@
     .resize-handle.e { top: 50%; right: -7px; transform: translateY(-50%); width: 8px; height: 28px; border-radius: 4px; cursor: ew-resize; }
     .resize-handle.w { top: 50%; left: -7px; transform: translateY(-50%); width: 8px; height: 28px; border-radius: 4px; cursor: ew-resize; }
 
-    /* Tombol aksi kecil */
     .overlay-actions {
       position: absolute;
       top: 4px;
@@ -199,43 +194,6 @@
       background: rgba(220, 38, 38, 0.8);
     }
 
-    /* Tombol simpan posisi mengambang */
-    #save-button {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 9999;
-      background: rgba(0, 0, 0, 0.7);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 10px 18px;
-      border-radius: 30px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-      transition: opacity 0.4s ease, transform 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      opacity: 1;
-      pointer-events: auto;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-    }
-
-    #save-button.hidden {
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.5s ease 1.5s;
-    }
-
-    #save-button:hover {
-      background: rgba(0, 0, 0, 0.85);
-      border-color: rgba(255, 255, 255, 0.6);
-      transform: scale(1.04);
-    }
-
     body.display-mode .overlay-item {
       outline: none !important;
     }
@@ -247,81 +205,103 @@
       display: none !important;
     }
 
-    body.display-mode #save-button {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    #mode-indicator {
+    /* Indikator kecil bahwa posisi tersimpan di URL */
+    #url-indicator {
       position: fixed;
-      bottom: 20px;
-      left: 20px;
+      bottom: 16px;
+      left: 16px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
       font-size: 10px;
-      color: rgba(255, 255, 255, 0.4);
+      padding: 4px 10px;
+      border-radius: 12px;
       z-index: 9998;
       pointer-events: none;
+      opacity: 0.6;
+    }
+
+    body.display-mode #url-indicator {
+      display: none;
     }
   </style>
 </head>
 <body class="edit-mode">
 
   <div id="overlay-canvas"></div>
-
-  <button id="save-button" title="Simpan posisi dan ukuran semua overlay">💾 Simpan Posisi</button>
-  <div id="mode-indicator">Mode Edit • Klik simpan untuk menyimpan layout</div>
+  <div id="url-indicator">🔗 Posisi tersimpan di URL</div>
 
   <script>
     (function () {
-      // ================== HARDCODE LINK OVERLAY DI SINI ==================
-      // Isi URL sesuai kebutuhan. Atur "active: true" untuk menampilkan overlay.
-      // Jika "active: false" atau properti tidak ada, overlay tidak akan muncul.
+      // ================== DAFTAR OVERLAY (AKTIF/NONAKTIF) ==================
       const presetOverlays = [
-        // --- 10 Sociabuzz Alert ---
+        // 10 Sociabuzz
         { type: 'iframe', url: 'https://sociabuzz.com/pro/tribe/alert1/v3/7264966058?colorName=%2300ff00&alphaName=1&colorNote=%23ffff00&alphaNote=1&colorFrom=%23eeeeee&alphaFrom=1&gifActive=1&maxDuration=25&font=Open%2BSans%3A800', label: 'Sociabuzz Alert 1', active: true },
         { type: 'iframe', url: 'https://sociabuzz.com/pro/tribe/total1/v1/7264966058', label: 'Sociabuzz Alert 2', active: true },
         { type: 'iframe', url: 'https://sociabuzz.com/pro/tribe/topleaderboard/v2/7264966058', label: 'Sociabuzz Alert 3', active: true },
         { type: 'iframe', url: 'https://sociabuzz.com/pro/tribe/total/v2/7264966058', label: 'Sociabuzz Alert 4', active: true },
-        { type: 'iframe', url: '', label: 'Sociabuzz Alert 5 (nonaktif)', active: false },  // kosong & nonaktif
-        { type: 'iframe', url: '', label: 'Sociabuzz Alert 6 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'Sociabuzz Alert 7 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'Sociabuzz Alert 8 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'Sociabuzz Alert 9 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'Sociabuzz Alert 10 (nonaktif)', active: false },
-        // --- 10 TikFinity Alert ---
+        { type: 'iframe', url: '', label: 'Sociabuzz 5', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz 6', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz 7', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz 8', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz 9', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz 10', active: false },
+        // 10 TikFinity
         { type: 'iframe', url: 'https://tikfinity.zerody.one/widget/myactions?cid=3456048&screen=2', label: 'TikFinity Alert 1', active: true },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 2 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 3 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 4 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 5 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 6 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 7 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 8 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 9 (nonaktif)', active: false },
-        { type: 'iframe', url: '', label: 'TikFinity Alert 10 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 2', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 3', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 4', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 5', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 6', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 7', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 8', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 9', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity 10', active: false },
       ];
 
-      // ================== VARIABEL UTAMA ==================
       const canvas = document.getElementById('overlay-canvas');
-      const saveButton = document.getElementById('save-button');
-      const modeIndicator = document.getElementById('mode-indicator');
-      const STORAGE_KEY = 'overlay_agg_minimal_positions';
-      let overlays = [];   // hanya yang aktif & sudah dirender
+      let overlays = [];
       let currentId = 0;
       let isDisplayMode = false;
+      let autoSaveTimeout;
 
-      // ================== FUNGSI BANTU ==================
-      function generateId() {
-        return 'ov_' + Date.now() + '_' + (++currentId);
+      // ================== ENCODE / DECODE URL HASH ==================
+      function encodePositionsToHash() {
+        const data = overlays.map(o => ({
+          id: o.id, type: o.type, url: o.url,
+          x: o.x, y: o.y, width: o.width, height: o.height,
+          zIndex: o.zIndex, muted: o.muted, label: o.label,
+          originalWidth: o.originalWidth, originalHeight: o.originalHeight
+        }));
+        const json = JSON.stringify(data);
+        return btoa(unescape(encodeURIComponent(json)));
       }
 
-      function applyIframeScale(item, overlayData) {
-        if (overlayData.type !== 'iframe') return;
+      function decodePositionsFromHash(hash) {
+        try {
+          const json = decodeURIComponent(escape(atob(hash)));
+          return JSON.parse(json);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // Perbarui URL hash tanpa reload halaman
+      function updateHash() {
+        const hash = encodePositionsToHash();
+        if (window.location.hash.substring(1) !== hash) {
+          history.replaceState(null, '', '#' + hash);
+        }
+      }
+
+      // ================== BUAT ELEMEN OVERLAY ==================
+      function applyIframeScale(item, data) {
+        if (data.type !== 'iframe') return;
         const iframe = item.querySelector('iframe');
         if (!iframe) return;
-        const origW = overlayData.originalWidth || overlayData.width;
-        const origH = overlayData.originalHeight || overlayData.height;
-        const scaleX = overlayData.width / origW;
-        const scaleY = overlayData.height / origH;
+        const origW = data.originalWidth || data.width;
+        const origH = data.originalHeight || data.height;
+        const scaleX = data.width / origW;
+        const scaleY = data.height / origH;
         iframe.style.transform = `scale(${scaleX}, ${scaleY})`;
         iframe.style.transformOrigin = '0 0';
         iframe.style.width = origW + 'px';
@@ -331,56 +311,54 @@
         iframe.style.left = '0';
       }
 
-      function createOverlayElement(overlayData) {
+      function createOverlayElement(data) {
         const item = document.createElement('div');
         item.className = 'overlay-item edit-mode';
-        item.dataset.id = overlayData.id;
-        item.style.left = overlayData.x + 'px';
-        item.style.top = overlayData.y + 'px';
-        item.style.width = overlayData.width + 'px';
-        item.style.height = overlayData.height + 'px';
-        item.style.zIndex = overlayData.zIndex;
+        item.dataset.id = data.id;
+        item.style.left = data.x + 'px';
+        item.style.top = data.y + 'px';
+        item.style.width = data.width + 'px';
+        item.style.height = data.height + 'px';
+        item.style.zIndex = data.zIndex;
 
         const label = document.createElement('div');
         label.className = 'overlay-label';
-        label.textContent = overlayData.label || 'Overlay';
+        label.textContent = data.label || 'Overlay';
         item.appendChild(label);
 
         const content = document.createElement('div');
         content.className = 'overlay-content';
-        if (overlayData.type === 'iframe') {
+        if (data.type === 'iframe') {
           const iframe = document.createElement('iframe');
-          iframe.src = overlayData.url;
+          iframe.src = data.url;
           iframe.allow = 'autoplay; camera; microphone; fullscreen';
-          iframe.title = overlayData.label;
+          iframe.title = data.label;
           content.appendChild(iframe);
-        } else if (overlayData.type === 'image') {
+        } else if (data.type === 'image') {
           const img = document.createElement('img');
-          img.src = overlayData.url;
-          img.alt = overlayData.label;
+          img.src = data.url;
+          img.alt = data.label;
           img.draggable = false;
           content.appendChild(img);
-        } else if (overlayData.type === 'video') {
+        } else if (data.type === 'video') {
           const video = document.createElement('video');
-          video.src = overlayData.url;
+          video.src = data.url;
           video.autoplay = true;
           video.loop = true;
-          video.muted = overlayData.muted !== undefined ? overlayData.muted : true;
+          video.muted = data.muted ?? true;
           video.playsInline = true;
           content.appendChild(video);
           video.play().catch(() => {});
         }
         item.appendChild(content);
 
-        // Drag shield
         const shield = document.createElement('div');
         shield.className = 'drag-shield';
         shield.addEventListener('mousedown', onDragStart);
         shield.addEventListener('touchstart', onDragStart, { passive: false });
         item.appendChild(shield);
 
-        // Resize handles
-        ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(dir => {
+        ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
           const h = document.createElement('div');
           h.className = 'resize-handle ' + dir;
           h.dataset.direction = dir;
@@ -389,23 +367,22 @@
           item.appendChild(h);
         });
 
-        // Tombol aksi
         const actions = document.createElement('div');
         actions.className = 'overlay-actions';
         actions.innerHTML = `
           <button class="btn-front" title="Ke depan">⬆</button>
           <button class="btn-back" title="Ke belakang">⬇</button>
-          ${overlayData.type === 'video' ? `<button class="btn-mute ${overlayData.muted ? 'muted' : ''}" title="Mute">🔊</button>` : ''}
+          ${data.type === 'video' ? `<button class="btn-mute ${data.muted ? 'muted' : ''}" title="Mute">🔊</button>` : ''}
         `;
-        actions.querySelector('.btn-front')?.addEventListener('click', (e) => { e.stopPropagation(); bringToFront(overlayData.id); });
-        actions.querySelector('.btn-back')?.addEventListener('click', (e) => { e.stopPropagation(); sendToBack(overlayData.id); });
-        if (overlayData.type === 'video') {
-          actions.querySelector('.btn-mute').addEventListener('click', (e) => { e.stopPropagation(); toggleMute(overlayData.id); });
+        actions.querySelector('.btn-front')?.addEventListener('click', (e) => { e.stopPropagation(); bringToFront(data.id); });
+        actions.querySelector('.btn-back')?.addEventListener('click', (e) => { e.stopPropagation(); sendToBack(data.id); });
+        if (data.type === 'video') {
+          actions.querySelector('.btn-mute').addEventListener('click', (e) => { e.stopPropagation(); toggleMute(data.id); });
         }
         item.appendChild(actions);
 
-        if (overlayData.type === 'iframe') {
-          requestAnimationFrame(() => applyIframeScale(item, overlayData));
+        if (data.type === 'iframe') {
+          requestAnimationFrame(() => applyIframeScale(item, data));
         }
 
         canvas.appendChild(item);
@@ -454,7 +431,7 @@
         window.removeEventListener('mouseup', onDragEnd);
         window.removeEventListener('touchmove', onDragMove);
         window.removeEventListener('touchend', onDragEnd);
-        showSaveButton();
+        autoSaveToUrl();
       }
 
       let resizeState = null;
@@ -516,7 +493,7 @@
         window.removeEventListener('mouseup', onResizeEnd);
         window.removeEventListener('touchmove', onResizeMove);
         window.removeEventListener('touchend', onResizeEnd);
-        showSaveButton();
+        autoSaveToUrl();
       }
 
       function bringToFront(id) {
@@ -526,6 +503,7 @@
         ov.zIndex = maxZ + 1;
         const item = canvas.querySelector(`[data-id="${id}"]`);
         if (item) item.style.zIndex = ov.zIndex;
+        autoSaveToUrl();
       }
 
       function sendToBack(id) {
@@ -535,6 +513,7 @@
         ov.zIndex = Math.max(1, minZ - 1);
         const item = canvas.querySelector(`[data-id="${id}"]`);
         if (item) item.style.zIndex = ov.zIndex;
+        autoSaveToUrl();
       }
 
       function toggleMute(id) {
@@ -551,74 +530,48 @@
             btn.textContent = ov.muted ? '🔇' : '🔊';
           }
         }
+        autoSaveToUrl();
       }
 
-      // ================== TOMBOL SIMPAN ==================
-      let saveButtonTimeout;
-      function showSaveButton() {
-        saveButton.classList.remove('hidden');
-        clearTimeout(saveButtonTimeout);
-        saveButtonTimeout = setTimeout(() => {
-          saveButton.classList.add('hidden');
-        }, 3000);
+      // ================== AUTO-SAVE KE URL ==================
+      function autoSaveToUrl() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+          updateHash();
+        }, 300); // debounce 300ms
       }
-
-      function savePositions() {
-        // Simpan hanya overlay yang saat ini aktif (ada di array overlays)
-        const data = overlays.map(o => ({
-          id: o.id, type: o.type, url: o.url,
-          x: o.x, y: o.y, width: o.width, height: o.height,
-          zIndex: o.zIndex, muted: o.muted, label: o.label,
-          originalWidth: o.originalWidth, originalHeight: o.originalHeight
-        }));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        saveButton.classList.add('hidden');
-        clearTimeout(saveButtonTimeout);
-        const originalText = saveButton.innerHTML;
-        saveButton.innerHTML = '✅ Tersimpan!';
-        saveButton.classList.remove('hidden');
-        setTimeout(() => {
-          saveButton.innerHTML = originalText;
-          saveButton.classList.add('hidden');
-        }, 1500);
-      }
-
-      saveButton.addEventListener('click', savePositions);
 
       // ================== INISIALISASI ==================
-      function loadPositions() {
-        try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          return saved ? JSON.parse(saved) : null;
-        } catch (e) { return null; }
+      function loadPositionsFromUrl() {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+          const decoded = decodePositionsFromHash(hash);
+          if (decoded && Array.isArray(decoded)) return decoded;
+        }
+        return null;
       }
 
       function initializeOverlays() {
-        const savedPositions = loadPositions();
+        const savedPositions = loadPositionsFromUrl();
         const defaultWidth = 380;
         const defaultHeight = 280;
 
-        // Buat map dari url+label (untuk cocokkan posisi tersimpan)
         const savedMap = new Map();
         if (savedPositions) {
           savedPositions.forEach(p => savedMap.set(p.url + '|' + p.label, p));
         }
 
-        // Filter hanya overlay yang aktif (active === true)
         const activePresets = presetOverlays.filter(p => p.active === true);
-
-        // Jika tidak ada yang aktif, hentikan
         if (activePresets.length === 0) return;
 
         activePresets.forEach((preset, index) => {
           const key = preset.url + '|' + preset.label;
           const saved = savedMap.get(key);
-          // Offset posisi awal agar tidak bertumpuk
           const offsetX = (index % 4) * 25;
           const offsetY = Math.floor(index / 4) * 25;
 
           const overlayData = {
-            id: generateId(),
+            id: 'ov_' + Date.now() + '_' + (++currentId),
             type: preset.type,
             url: preset.url,
             x: saved ? saved.x : 100 + offsetX,
@@ -634,43 +587,28 @@
           overlays.push(overlayData);
           createOverlayElement(overlayData);
         });
+
+        // Jika ada hash yang valid, tidak perlu update. Jika tidak, langsung encode.
+        if (!window.location.hash) {
+          updateHash();
+        }
       }
 
-      // Mode display toggle (tekan H)
-      function toggleDisplayMode() {
-        isDisplayMode = !isDisplayMode;
-        if (isDisplayMode) {
+      // Mode display via ?display=1
+      function checkDisplayMode() {
+        if (new URLSearchParams(location.search).get('display') === '1') {
+          isDisplayMode = true;
           document.body.classList.add('display-mode');
-          saveButton.classList.add('hidden');
-          modeIndicator.textContent = 'Mode Display (OBS) • Tekan H untuk edit';
-        } else {
-          document.body.classList.remove('display-mode');
-          modeIndicator.textContent = 'Mode Edit • Klik simpan untuk menyimpan layout';
         }
       }
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'h' || e.key === 'H') {
-          if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-          e.preventDefault();
-          toggleDisplayMode();
-        }
-      });
 
       // Mulai
       initializeOverlays();
+      checkDisplayMode();
 
-      // Jika parameter ?display=1, langsung mode display
-      if (new URLSearchParams(location.search).get('display') === '1') {
-        toggleDisplayMode();
-      } else {
-        showSaveButton();
-      }
-
-      // Ekspos API global
       window.OverlayAggregator = {
-        savePositions,
-        toggleDisplayMode,
+        autoSaveToUrl,
+        updateHash,
       };
     })();
   </script>
