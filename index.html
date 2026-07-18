@@ -3,20 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Transparent Overlay Aggregator • Pro</title>
+  <title>Transparent Overlay Aggregator • Minimal</title>
   <style>
     :root {
-      --panel-bg: rgba(18, 22, 28, 0.95);
-      --text: #e2e8f0;
       --accent: #38bdf8;
-      --accent-hover: #7dd3fc;
       --danger: #f87171;
-      --success: #4ade80;
       --warning: #fbbf24;
-      --border: rgba(255, 255, 255, 0.12);
-      --shadow: 0 20px 40px rgba(0,0,0,0.7);
-      --radius: 12px;
-      --font: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
     * {
@@ -30,10 +22,9 @@
       height: 100%;
       background: transparent !important;
       overflow: hidden;
-      font-family: var(--font);
+      font-family: 'Segoe UI', system-ui, sans-serif;
     }
 
-    /* ========== KANVAS TRANSPARAN ========== */
     #overlay-canvas {
       position: absolute;
       inset: 0;
@@ -41,7 +32,7 @@
       z-index: 1;
     }
 
-    /* ========== OVERLAY ITEM ========== */
+    /* Overlay item */
     .overlay-item {
       position: absolute;
       min-width: 40px;
@@ -49,10 +40,18 @@
       cursor: default;
       z-index: 10;
       background: transparent;
-      will-change: transform;
+      transition: outline 0.1s;
     }
 
-    /* Drag shield menutupi seluruh area untuk geser mudah */
+    .overlay-item.edit-mode {
+      outline: 1px dashed rgba(255, 255, 255, 0.4);
+      outline-offset: 0px;
+    }
+
+    .overlay-item.edit-mode:hover {
+      outline: 2px dashed rgba(255, 255, 255, 0.8);
+    }
+
     .drag-shield {
       position: absolute;
       top: 0;
@@ -63,16 +62,12 @@
       background: transparent;
       cursor: move;
       touch-action: none;
-      pointer-events: auto;
-      transition: opacity 0.15s;
     }
 
-    /* Sembunyikan shield di display mode */
     body.display-mode .drag-shield {
       display: none !important;
     }
 
-    /* Konten visual */
     .overlay-content {
       position: absolute;
       top: 0;
@@ -85,7 +80,6 @@
       pointer-events: none;
     }
 
-    /* Aktifkan interaksi di dalam konten hanya saat display mode */
     body.display-mode .overlay-content {
       pointer-events: auto;
     }
@@ -106,22 +100,21 @@
       object-fit: contain;
     }
 
-    /* Label overlay */
+    /* Label kecil */
     .overlay-label {
       position: absolute;
-      top: -26px;
+      top: -22px;
       left: 0;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0, 0, 0, 0.75);
       color: #fff;
-      font-size: 10px;
-      padding: 4px 10px;
-      border-radius: 20px;
+      font-size: 9px;
+      padding: 2px 8px;
+      border-radius: 10px;
       white-space: nowrap;
       z-index: 30;
       opacity: 0;
       transition: opacity 0.2s;
       pointer-events: none;
-      letter-spacing: 0.3px;
     }
 
     .overlay-item.edit-mode:hover .overlay-label,
@@ -130,17 +123,13 @@
       opacity: 1;
     }
 
-    body.display-mode .overlay-label {
-      display: none !important;
-    }
-
     /* Resize handles */
     .resize-handle {
       position: absolute;
       z-index: 35;
       background: var(--accent);
       border: 2px solid white;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
       opacity: 0;
       transition: opacity 0.2s;
       pointer-events: auto;
@@ -152,35 +141,32 @@
       opacity: 1;
     }
 
-    body.display-mode .resize-handle {
-      display: none !important;
-    }
-
     .resize-handle.nw, .resize-handle.ne, .resize-handle.sw, .resize-handle.se {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
     }
-    .resize-handle.nw { top: -8px; left: -8px; cursor: nwse-resize; }
-    .resize-handle.ne { top: -8px; right: -8px; cursor: nesw-resize; }
-    .resize-handle.sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
-    .resize-handle.se { bottom: -8px; right: -8px; cursor: nwse-resize; }
-    .resize-handle.n { top: -8px; left: 50%; transform: translateX(-50%); width: 30px; height: 10px; border-radius: 6px; cursor: ns-resize; }
-    .resize-handle.s { bottom: -8px; left: 50%; transform: translateX(-50%); width: 30px; height: 10px; border-radius: 6px; cursor: ns-resize; }
-    .resize-handle.e { top: 50%; right: -8px; transform: translateY(-50%); width: 10px; height: 30px; border-radius: 6px; cursor: ew-resize; }
-    .resize-handle.w { top: 50%; left: -8px; transform: translateY(-50%); width: 10px; height: 30px; border-radius: 6px; cursor: ew-resize; }
 
-    /* Tombol aksi cepat */
+    .resize-handle.nw { top: -7px; left: -7px; cursor: nwse-resize; }
+    .resize-handle.ne { top: -7px; right: -7px; cursor: nesw-resize; }
+    .resize-handle.sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+    .resize-handle.se { bottom: -7px; right: -7px; cursor: nwse-resize; }
+    .resize-handle.n { top: -7px; left: 50%; transform: translateX(-50%); width: 28px; height: 8px; border-radius: 4px; cursor: ns-resize; }
+    .resize-handle.s { bottom: -7px; left: 50%; transform: translateX(-50%); width: 28px; height: 8px; border-radius: 4px; cursor: ns-resize; }
+    .resize-handle.e { top: 50%; right: -7px; transform: translateY(-50%); width: 8px; height: 28px; border-radius: 4px; cursor: ew-resize; }
+    .resize-handle.w { top: 50%; left: -7px; transform: translateY(-50%); width: 8px; height: 28px; border-radius: 4px; cursor: ew-resize; }
+
+    /* Tombol aksi kecil */
     .overlay-actions {
       position: absolute;
-      top: 6px;
-      right: 6px;
+      top: 4px;
+      right: 4px;
       display: flex;
-      gap: 4px;
+      gap: 3px;
       z-index: 40;
-      opacity: 1;
+      opacity: 0;
       transition: opacity 0.2s;
-      pointer-events: auto;
+      pointer-events: none;
     }
 
     .overlay-item.edit-mode:hover .overlay-actions {
@@ -188,127 +174,91 @@
       pointer-events: auto;
     }
 
-    body.display-mode .overlay-actions {
-      display: none !important;
-    }
-
     .overlay-actions button {
-      width: 26px;
-      height: 26px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.6);
+      border: 1px solid rgba(255, 255, 255, 0.6);
       cursor: pointer;
-      font-size: 12px;
+      font-size: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      backdrop-filter: blur(6px);
-      background: rgba(20,20,30,0.7);
+      background: rgba(20, 20, 30, 0.8);
+      backdrop-filter: blur(4px);
       transition: all 0.15s;
     }
 
     .overlay-actions button:hover {
-      background: rgba(0,0,0,0.8);
+      background: rgba(0, 0, 0, 0.85);
       border-color: #fff;
     }
 
     .btn-mute.muted {
-      background: rgba(220,38,38,0.8);
+      background: rgba(220, 38, 38, 0.8);
     }
 
-    /* Panel kontrol */
-    #control-panel {
+    /* Tombol simpan posisi mengambang */
+    #save-button {
       position: fixed;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 99999;
-      background: var(--panel-bg);
-      color: var(--text);
-      border-radius: var(--radius);
-      padding: 12px 18px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      backdrop-filter: blur(16px);
-      max-width: 95vw;
-      transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
-    }
-
-    #control-panel.hidden {
-      opacity: 0;
-      pointer-events: none;
-      transform: translateX(-50%) translateY(-140%);
-    }
-
-    #control-panel input, #control-panel select {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid var(--border);
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.7);
       color: #fff;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-family: var(--font);
-      outline: none;
-      transition: 0.15s;
-    }
-
-    #control-panel input:focus, #control-panel select:focus {
-      border-color: var(--accent);
-      background: rgba(255,255,255,0.12);
-    }
-
-    #control-panel button {
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 12px;
-      font-family: var(--font);
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-
-    .btn-add { background: var(--accent); color: #000; }
-    .btn-add:hover { background: var(--accent-hover); }
-    .btn-file { background: rgba(255,255,255,0.1); color: #fff; border-color: var(--border); }
-    .btn-save { background: var(--success); color: #000; }
-    .btn-export { background: rgba(99,102,241,0.6); color: #fff; }
-    .btn-import { background: rgba(245,158,11,0.6); color: #fff; }
-    .btn-reset { background: transparent; color: var(--danger); border-color: var(--danger); }
-    .btn-toggle { background: rgba(255,255,255,0.1); border-radius: 50%; width: 38px; height: 38px; padding: 0; font-size: 18px; }
-
-    #toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(120px);
-      background: rgba(10,10,18,0.9);
-      color: #fff;
-      padding: 10px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 10px 18px;
       border-radius: 30px;
       font-size: 13px;
-      z-index: 999999;
-      transition: transform 0.3s ease;
-      border: 1px solid var(--border);
-      backdrop-filter: blur(10px);
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.4s ease, transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 1;
+      pointer-events: auto;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #save-button.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease 1.5s;
+    }
+
+    #save-button:hover {
+      background: rgba(0, 0, 0, 0.85);
+      border-color: rgba(255, 255, 255, 0.6);
+      transform: scale(1.04);
+    }
+
+    body.display-mode .overlay-item {
+      outline: none !important;
+    }
+
+    body.display-mode .drag-shield,
+    body.display-mode .resize-handle,
+    body.display-mode .overlay-actions,
+    body.display-mode .overlay-label {
+      display: none !important;
+    }
+
+    body.display-mode #save-button {
+      opacity: 0;
       pointer-events: none;
     }
-    #toast.show { transform: translateX(-50%) translateY(0); }
 
-    #indicator {
+    #mode-indicator {
       position: fixed;
-      top: 8px;
-      right: 16px;
+      bottom: 20px;
+      left: 20px;
       font-size: 10px;
-      color: rgba(255,255,255,0.5);
-      z-index: 99998;
+      color: rgba(255, 255, 255, 0.4);
+      z-index: 9998;
       pointer-events: none;
     }
   </style>
@@ -317,64 +267,53 @@
 
   <div id="overlay-canvas"></div>
 
-  <div id="control-panel">
-    <select id="typeSelect" style="min-width:100px;">
-      <option value="iframe">🌐 Link Overlay</option>
-      <option value="image">🖼️ Gambar/GIF</option>
-      <option value="video">🎬 Video</option>
-    </select>
-    <input type="text" id="urlInput" placeholder="Tempel URL / link di sini..." style="min-width:220px;" />
-    <button class="btn-add" id="btnAdd">➕ Tambah</button>
-    <button class="btn-file" id="btnFilePick">📁 File Lokal</button>
-    <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden />
-    <button class="btn-save" id="btnSave">💾 Simpan</button>
-    <button class="btn-export" id="btnExport">📤 Ekspor</button>
-    <button class="btn-import" id="btnImport">📥 Impor</button>
-    <input type="file" id="importFileInput" accept=".json" hidden />
-    <button class="btn-reset" id="btnReset">🗑️ Reset</button>
-    <button class="btn-toggle" id="btnTogglePanel">👁️</button>
-    <span id="overlayCount" style="color:#94a3b8; font-size:11px;">0 overlay</span>
-  </div>
-  <div id="indicator">Tekan <b>H</b> sembunyikan panel • Mode Edit</div>
-  <div id="toast"></div>
+  <button id="save-button" title="Simpan posisi dan ukuran semua overlay">💾 Simpan Posisi</button>
+  <div id="mode-indicator">Mode Edit • Klik simpan untuk menyimpan layout</div>
 
   <script>
-    (() => {
+    (function () {
+      // ================== HARDCODE LINK OVERLAY DI SINI ==================
+      // Isi URL sesuai kebutuhan. Atur "active: true" untuk menampilkan overlay.
+      // Jika "active: false" atau properti tidak ada, overlay tidak akan muncul.
+      const presetOverlays = [
+        // --- 10 Sociabuzz Alert ---
+        { type: 'iframe', url: 'https://sociabuzz.com/pro/tribe/alert1/v3/7264966058?colorName=%2300ff00&alphaName=1&colorNote=%23ffff00&alphaNote=1&colorFrom=%23eeeeee&alphaFrom=1&gifActive=1&maxDuration=25&font=Open%2BSans%3A800', label: 'Sociabuzz Alert 1', active: true },
+        { type: 'iframe', url: 'https://sociabuzz.com/pro/tribe/total1/v1/7264966058', label: 'Sociabuzz Alert 2', active: true },
+        { type: 'iframe', url: 'https://sociabuzz.com/pro/tribe/topleaderboard/v2/7264966058', label: 'Sociabuzz Alert 3', active: true },
+        { type: 'iframe', url: 'https://sociabuzz.com/pro/tribe/total/v2/7264966058', label: 'Sociabuzz Alert 4', active: true },
+        { type: 'iframe', url: '', label: 'Sociabuzz Alert 5 (nonaktif)', active: false },  // kosong & nonaktif
+        { type: 'iframe', url: '', label: 'Sociabuzz Alert 6 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz Alert 7 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz Alert 8 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz Alert 9 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'Sociabuzz Alert 10 (nonaktif)', active: false },
+        // --- 10 TikFinity Alert ---
+        { type: 'iframe', url: 'https://tikfinity.zerody.one/widget/myactions?cid=3456048&screen=2', label: 'TikFinity Alert 1', active: true },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 2 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 3 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 4 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 5 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 6 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 7 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 8 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 9 (nonaktif)', active: false },
+        { type: 'iframe', url: '', label: 'TikFinity Alert 10 (nonaktif)', active: false },
+      ];
+
+      // ================== VARIABEL UTAMA ==================
       const canvas = document.getElementById('overlay-canvas');
-      const panel = document.getElementById('control-panel');
-      const typeSelect = document.getElementById('typeSelect');
-      const urlInput = document.getElementById('urlInput');
-      const btnAdd = document.getElementById('btnAdd');
-      const btnFilePick = document.getElementById('btnFilePick');
-      const fileInput = document.getElementById('fileInput');
-      const btnSave = document.getElementById('btnSave');
-      const btnExport = document.getElementById('btnExport');
-      const btnImport = document.getElementById('btnImport');
-      const importFileInput = document.getElementById('importFileInput');
-      const btnReset = document.getElementById('btnReset');
-      const btnTogglePanel = document.getElementById('btnTogglePanel');
-      const overlayCountSpan = document.getElementById('overlayCount');
-      const toast = document.getElementById('toast');
-      const indicator = document.getElementById('indicator');
-
-      let overlays = [];
-      let idCounter = 0;
-      let panelVisible = true;
+      const saveButton = document.getElementById('save-button');
+      const modeIndicator = document.getElementById('mode-indicator');
+      const STORAGE_KEY = 'overlay_agg_minimal_positions';
+      let overlays = [];   // hanya yang aktif & sudah dirender
+      let currentId = 0;
       let isDisplayMode = false;
-      const STORAGE_KEY = 'overlay_agg_v2';
 
-      // Toast
-      let toastTimer;
-      function showToast(msg) {
-        clearTimeout(toastTimer);
-        toast.textContent = msg;
-        toast.classList.add('show');
-        toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+      // ================== FUNGSI BANTU ==================
+      function generateId() {
+        return 'ov_' + Date.now() + '_' + (++currentId);
       }
 
-      function generateId() { return 'ov_' + Date.now() + '_' + (++idCounter); }
-
-      // Update ukuran iframe dengan scaling proporsional
       function applyIframeScale(item, overlayData) {
         if (overlayData.type !== 'iframe') return;
         const iframe = item.querySelector('iframe');
@@ -392,51 +331,48 @@
         iframe.style.left = '0';
       }
 
-      function createOverlayElement(data) {
+      function createOverlayElement(overlayData) {
         const item = document.createElement('div');
         item.className = 'overlay-item edit-mode';
-        item.dataset.id = data.id;
-        item.style.left = data.x + 'px';
-        item.style.top = data.y + 'px';
-        item.style.width = data.width + 'px';
-        item.style.height = data.height + 'px';
-        item.style.zIndex = data.zIndex;
+        item.dataset.id = overlayData.id;
+        item.style.left = overlayData.x + 'px';
+        item.style.top = overlayData.y + 'px';
+        item.style.width = overlayData.width + 'px';
+        item.style.height = overlayData.height + 'px';
+        item.style.zIndex = overlayData.zIndex;
 
-        // Label
         const label = document.createElement('div');
         label.className = 'overlay-label';
-        label.textContent = data.label || data.type;
+        label.textContent = overlayData.label || 'Overlay';
         item.appendChild(label);
 
-        // Konten
         const content = document.createElement('div');
         content.className = 'overlay-content';
-        if (data.type === 'iframe') {
+        if (overlayData.type === 'iframe') {
           const iframe = document.createElement('iframe');
-          iframe.src = data.url;
+          iframe.src = overlayData.url;
           iframe.allow = 'autoplay; camera; microphone; fullscreen';
-          iframe.allowFullscreen = true;
-          iframe.title = data.label;
+          iframe.title = overlayData.label;
           content.appendChild(iframe);
-        } else if (data.type === 'image') {
+        } else if (overlayData.type === 'image') {
           const img = document.createElement('img');
-          img.src = data.url;
-          img.alt = data.label;
+          img.src = overlayData.url;
+          img.alt = overlayData.label;
           img.draggable = false;
           content.appendChild(img);
-        } else if (data.type === 'video') {
+        } else if (overlayData.type === 'video') {
           const video = document.createElement('video');
-          video.src = data.url;
+          video.src = overlayData.url;
           video.autoplay = true;
           video.loop = true;
-          video.muted = data.muted ?? true;
+          video.muted = overlayData.muted !== undefined ? overlayData.muted : true;
           video.playsInline = true;
           content.appendChild(video);
           video.play().catch(() => {});
         }
         item.appendChild(content);
 
-        // Drag shield (area geser transparan)
+        // Drag shield
         const shield = document.createElement('div');
         shield.className = 'drag-shield';
         shield.addEventListener('mousedown', onDragStart);
@@ -444,7 +380,7 @@
         item.appendChild(shield);
 
         // Resize handles
-        ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
+        ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(dir => {
           const h = document.createElement('div');
           h.className = 'resize-handle ' + dir;
           h.dataset.direction = dir;
@@ -453,46 +389,43 @@
           item.appendChild(h);
         });
 
-        // Action buttons
+        // Tombol aksi
         const actions = document.createElement('div');
         actions.className = 'overlay-actions';
         actions.innerHTML = `
           <button class="btn-front" title="Ke depan">⬆</button>
           <button class="btn-back" title="Ke belakang">⬇</button>
-          ${data.type === 'video' ? `<button class="btn-mute ${data.muted ? 'muted' : ''}" title="Mute">🔊</button>` : ''}
-          <button class="btn-delete" title="Hapus">✕</button>
+          ${overlayData.type === 'video' ? `<button class="btn-mute ${overlayData.muted ? 'muted' : ''}" title="Mute">🔊</button>` : ''}
         `;
-        actions.querySelector('.btn-front').addEventListener('click', (e) => { e.stopPropagation(); bringToFront(data.id); });
-        actions.querySelector('.btn-back').addEventListener('click', (e) => { e.stopPropagation(); sendToBack(data.id); });
-        if (data.type === 'video') {
-          actions.querySelector('.btn-mute').addEventListener('click', (e) => { e.stopPropagation(); toggleMute(data.id); });
+        actions.querySelector('.btn-front')?.addEventListener('click', (e) => { e.stopPropagation(); bringToFront(overlayData.id); });
+        actions.querySelector('.btn-back')?.addEventListener('click', (e) => { e.stopPropagation(); sendToBack(overlayData.id); });
+        if (overlayData.type === 'video') {
+          actions.querySelector('.btn-mute').addEventListener('click', (e) => { e.stopPropagation(); toggleMute(overlayData.id); });
         }
-        actions.querySelector('.btn-delete').addEventListener('click', (e) => { e.stopPropagation(); removeOverlay(data.id); });
         item.appendChild(actions);
 
-        // Terapkan scaling iframe setelah elemen ada di DOM
-        if (data.type === 'iframe') {
-          requestAnimationFrame(() => applyIframeScale(item, data));
+        if (overlayData.type === 'iframe') {
+          requestAnimationFrame(() => applyIframeScale(item, overlayData));
         }
 
         canvas.appendChild(item);
         return item;
       }
 
-      // Drag
+      // ================== DRAG & RESIZE ==================
       let dragState = null;
       function onDragStart(e) {
         if (isDisplayMode) return;
         e.preventDefault();
         const item = e.target.closest('.overlay-item');
         if (!item) return;
-        const overlay = overlays.find(o => o.id === item.dataset.id);
-        if (!overlay) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        dragState = { overlayId: overlay.id, item, startX: clientX, startY: clientY, origLeft: overlay.x, origTop: overlay.y };
+        const ov = overlays.find(o => o.id === item.dataset.id);
+        if (!ov) return;
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        dragState = { overlayId: ov.id, item, startX: cx, startY: cy, origLeft: ov.x, origTop: ov.y };
         item.classList.add('dragging');
-        bringToFront(overlay.id);
+        bringToFront(ov.id);
         window.addEventListener('mousemove', onDragMove);
         window.addEventListener('mouseup', onDragEnd);
         window.addEventListener('touchmove', onDragMove, { passive: false });
@@ -521,10 +454,9 @@
         window.removeEventListener('mouseup', onDragEnd);
         window.removeEventListener('touchmove', onDragMove);
         window.removeEventListener('touchend', onDragEnd);
-        saveToStorage();
+        showSaveButton();
       }
 
-      // Resize
       let resizeState = null;
       function onResizeStart(e) {
         if (isDisplayMode) return;
@@ -533,14 +465,14 @@
         const handle = e.target.closest('.resize-handle');
         const item = e.target.closest('.overlay-item');
         if (!handle || !item) return;
-        const overlay = overlays.find(o => o.id === item.dataset.id);
-        if (!overlay) return;
+        const ov = overlays.find(o => o.id === item.dataset.id);
+        if (!ov) return;
         const cx = e.touches ? e.touches[0].clientX : e.clientX;
         const cy = e.touches ? e.touches[0].clientY : e.clientY;
         resizeState = {
-          overlayId: overlay.id, item, direction: handle.dataset.direction,
-          startX: cx, startY: cy, origLeft: overlay.x, origTop: overlay.y,
-          origWidth: overlay.width, origHeight: overlay.height
+          overlayId: ov.id, item, direction: handle.dataset.direction,
+          startX: cx, startY: cy, origLeft: ov.x, origTop: ov.y,
+          origWidth: ov.width, origHeight: ov.height
         };
         item.classList.add('resizing');
         window.addEventListener('mousemove', onResizeMove);
@@ -584,54 +516,16 @@
         window.removeEventListener('mouseup', onResizeEnd);
         window.removeEventListener('touchmove', onResizeMove);
         window.removeEventListener('touchend', onResizeEnd);
-        saveToStorage();
-      }
-
-      function addOverlay(type, url, opts = {}) {
-        if (!url?.trim()) { showToast('⚠️ URL tidak boleh kosong'); return; }
-        const id = generateId();
-        const count = overlays.length;
-        const offsetX = (count % 4) * 28, offsetY = Math.floor(count/4) * 28;
-        const defaultW = type === 'video' ? 560 : 380;
-        const defaultH = type === 'video' ? 315 : 280;
-        const data = {
-          id, type, url: url.trim(),
-          x: opts.x ?? 100 + offsetX, y: opts.y ?? 100 + offsetY,
-          width: opts.width ?? defaultW, height: opts.height ?? defaultH,
-          originalWidth: opts.originalWidth ?? (opts.width ?? defaultW),
-          originalHeight: opts.originalHeight ?? (opts.height ?? defaultH),
-          zIndex: opts.zIndex ?? 20 + count,
-          muted: opts.muted ?? (type === 'video' ? true : false),
-          label: opts.label || (type + ': ' + (() => { try { const u = new URL(url.trim()); return u.hostname; } catch { return url.trim().split('/').pop()?.split('?')[0] || 'link'; } })()),
-          isLocalBlob: opts.isLocalBlob || false
-        };
-        overlays.push(data);
-        createOverlayElement(data);
-        updateCount();
-        saveToStorage();
-        showToast('✅ Ditambahkan: ' + data.label);
-      }
-
-      function removeOverlay(id) {
-        const idx = overlays.findIndex(o => o.id === id);
-        if (idx === -1) return;
-        const ov = overlays[idx];
-        if (ov.isLocalBlob && ov.url.startsWith('blob:')) URL.revokeObjectURL(ov.url);
-        overlays.splice(idx,1);
-        canvas.querySelector(`[data-id="${id}"]`)?.remove();
-        updateCount();
-        saveToStorage();
-        showToast('🗑️ Overlay dihapus');
+        showSaveButton();
       }
 
       function bringToFront(id) {
         const ov = overlays.find(o => o.id === id);
         if (!ov) return;
-        const maxZ = Math.max(...overlays.map(o => o.zIndex), 0);
+        const maxZ = Math.max(...overlays.map(o => o.zIndex), 10);
         ov.zIndex = maxZ + 1;
         const item = canvas.querySelector(`[data-id="${id}"]`);
         if (item) item.style.zIndex = ov.zIndex;
-        saveToStorage();
       }
 
       function sendToBack(id) {
@@ -641,7 +535,6 @@
         ov.zIndex = Math.max(1, minZ - 1);
         const item = canvas.querySelector(`[data-id="${id}"]`);
         if (item) item.style.zIndex = ov.zIndex;
-        saveToStorage();
       }
 
       function toggleMute(id) {
@@ -653,230 +546,133 @@
           const video = item.querySelector('video');
           if (video) video.muted = ov.muted;
           const btn = item.querySelector('.btn-mute');
-          if (btn) { btn.classList.toggle('muted', ov.muted); btn.textContent = ov.muted ? '🔇' : '🔊'; }
+          if (btn) {
+            btn.classList.toggle('muted', ov.muted);
+            btn.textContent = ov.muted ? '🔇' : '🔊';
+          }
         }
-        saveToStorage();
       }
 
-      function updateCount() { overlayCountSpan.textContent = overlays.length + ' overlay'; }
-
-      function resetAll() {
-        if (!overlays.length) return;
-        if (!confirm('Hapus SEMUA overlay?')) return;
-        overlays.forEach(o => { if (o.isLocalBlob && o.url.startsWith('blob:')) URL.revokeObjectURL(o.url); });
-        overlays = []; canvas.innerHTML = ''; updateCount(); localStorage.removeItem(STORAGE_KEY);
-        showToast('🧹 Semua overlay dihapus');
+      // ================== TOMBOL SIMPAN ==================
+      let saveButtonTimeout;
+      function showSaveButton() {
+        saveButton.classList.remove('hidden');
+        clearTimeout(saveButtonTimeout);
+        saveButtonTimeout = setTimeout(() => {
+          saveButton.classList.add('hidden');
+        }, 3000);
       }
 
-      function saveToStorage() {
+      function savePositions() {
+        // Simpan hanya overlay yang saat ini aktif (ada di array overlays)
         const data = overlays.map(o => ({
-          ...o, url: o.isLocalBlob ? '[blob]' : o.url
+          id: o.id, type: o.type, url: o.url,
+          x: o.x, y: o.y, width: o.width, height: o.height,
+          zIndex: o.zIndex, muted: o.muted, label: o.label,
+          originalWidth: o.originalWidth, originalHeight: o.originalHeight
         }));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        saveButton.classList.add('hidden');
+        clearTimeout(saveButtonTimeout);
+        const originalText = saveButton.innerHTML;
+        saveButton.innerHTML = '✅ Tersimpan!';
+        saveButton.classList.remove('hidden');
+        setTimeout(() => {
+          saveButton.innerHTML = originalText;
+          saveButton.classList.add('hidden');
+        }, 1500);
       }
 
-      function loadFromStorage() {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return false;
+      saveButton.addEventListener('click', savePositions);
+
+      // ================== INISIALISASI ==================
+      function loadPositions() {
         try {
-          const data = JSON.parse(raw);
-          canvas.innerHTML = '';
-          overlays.forEach(o => { if (o.isLocalBlob && o.url.startsWith('blob:')) URL.revokeObjectURL(o.url); });
-          overlays = [];
-          data.forEach(d => {
-            if (d.url === '[blob]' || d.isLocalBlob) {
-              const ph = { ...d, url: '', isLocalBlob: true, id: generateId(), label: (d.label||'file') + ' ⚠️' };
-              overlays.push(ph);
-              const el = createOverlayElement(ph);
-              el.querySelector('.overlay-content').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f87171;font-size:12px;">⚠️ File lokal perlu diisi ulang</div>';
-            } else {
-              const nd = { ...d, id: generateId(), originalWidth: d.originalWidth || d.width, originalHeight: d.originalHeight || d.height };
-              overlays.push(nd);
-              createOverlayElement(nd);
-            }
-          });
-          idCounter = overlays.length;
-          updateCount();
-          return true;
-        } catch { return false; }
+          const saved = localStorage.getItem(STORAGE_KEY);
+          return saved ? JSON.parse(saved) : null;
+        } catch (e) { return null; }
       }
 
-      function exportConfig() {
-        const exp = overlays.map(o => ({ ...o, url: o.isLocalBlob ? '[blob]' : o.url }));
-        const blob = new Blob([JSON.stringify(exp, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = 'overlays-config.json'; a.click(); showToast('📤 Konfigurasi diekspor');
-      }
+      function initializeOverlays() {
+        const savedPositions = loadPositions();
+        const defaultWidth = 380;
+        const defaultHeight = 280;
 
-      function importConfig(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const data = JSON.parse(e.target.result);
-            canvas.innerHTML = ''; overlays = [];
-            data.forEach(d => {
-              if (d.url === '[blob]') {
-                const ph = { ...d, url: '', isLocalBlob: true, id: generateId() };
-                overlays.push(ph); createOverlayElement(ph);
-              } else {
-                const nd = { ...d, id: generateId(), originalWidth: d.originalWidth||d.width, originalHeight: d.originalHeight||d.height };
-                overlays.push(nd); createOverlayElement(nd);
-              }
-            });
-            updateCount(); saveToStorage(); showToast('📥 Diimpor ' + overlays.length + ' overlay');
-          } catch { showToast('⚠️ Format file tidak valid'); }
-        };
-        reader.readAsText(file);
-      }
-
-      function togglePanel() {
-        panelVisible = !panelVisible;
-        if (panelVisible) {
-          panel.classList.remove('hidden');
-          isDisplayMode = false;
-          document.body.classList.remove('display-mode');
-          indicator.textContent = 'Tekan H sembunyikan panel • Mode Edit';
-          btnTogglePanel.textContent = '👁️';
-        } else {
-          panel.classList.add('hidden');
-          isDisplayMode = true;
-          document.body.classList.add('display-mode');
-          indicator.textContent = 'Mode Display (OBS) • Tekan H untuk edit';
-          btnTogglePanel.textContent = '👁️‍🗨️';
+        // Buat map dari url+label (untuk cocokkan posisi tersimpan)
+        const savedMap = new Map();
+        if (savedPositions) {
+          savedPositions.forEach(p => savedMap.set(p.url + '|' + p.label, p));
         }
-        localStorage.setItem('overlay_panel_v2', panelVisible ? 'show' : 'hide');
+
+        // Filter hanya overlay yang aktif (active === true)
+        const activePresets = presetOverlays.filter(p => p.active === true);
+
+        // Jika tidak ada yang aktif, hentikan
+        if (activePresets.length === 0) return;
+
+        activePresets.forEach((preset, index) => {
+          const key = preset.url + '|' + preset.label;
+          const saved = savedMap.get(key);
+          // Offset posisi awal agar tidak bertumpuk
+          const offsetX = (index % 4) * 25;
+          const offsetY = Math.floor(index / 4) * 25;
+
+          const overlayData = {
+            id: generateId(),
+            type: preset.type,
+            url: preset.url,
+            x: saved ? saved.x : 100 + offsetX,
+            y: saved ? saved.y : 100 + offsetY,
+            width: saved ? saved.width : defaultWidth,
+            height: saved ? saved.height : defaultHeight,
+            originalWidth: saved ? (saved.originalWidth || saved.width) : defaultWidth,
+            originalHeight: saved ? (saved.originalHeight || saved.height) : defaultHeight,
+            zIndex: saved ? saved.zIndex : 20 + index,
+            muted: saved ? saved.muted : (preset.type === 'video' ? true : false),
+            label: preset.label,
+          };
+          overlays.push(overlayData);
+          createOverlayElement(overlayData);
+        });
       }
 
-      // Event binding
-      btnAdd.addEventListener('click', () => {
-        const type = typeSelect.value;
-        const url = urlInput.value.trim();
-        if (!url) { showToast('⚠️ Masukkan URL dulu'); return; }
-        addOverlay(type, url);
-        urlInput.value = '';
-        urlInput.focus();
-      });
-      urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnAdd.click(); });
-      btnFilePick.addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', (e) => {
-        [...e.target.files].forEach(f => {
-          const blobUrl = URL.createObjectURL(f);
-          const type = f.type.startsWith('video') ? 'video' : 'image';
-          addOverlay(type, blobUrl, { label: '📁 ' + f.name, isLocalBlob: true, muted: type==='video'?true:false });
-        });
-        fileInput.value = '';
-      });
-      btnSave.addEventListener('click', () => { saveToStorage(); showToast('💾 Disimpan'); });
-      btnExport.addEventListener('click', exportConfig);
-      btnImport.addEventListener('click', () => importFileInput.click());
-      importFileInput.addEventListener('change', (e) => { if (e.target.files[0]) importConfig(e.target.files[0]); importFileInput.value = ''; });
-      btnReset.addEventListener('click', resetAll);
-      btnTogglePanel.addEventListener('click', togglePanel);
+      // Mode display toggle (tekan H)
+      function toggleDisplayMode() {
+        isDisplayMode = !isDisplayMode;
+        if (isDisplayMode) {
+          document.body.classList.add('display-mode');
+          saveButton.classList.add('hidden');
+          modeIndicator.textContent = 'Mode Display (OBS) • Tekan H untuk edit';
+        } else {
+          document.body.classList.remove('display-mode');
+          modeIndicator.textContent = 'Mode Edit • Klik simpan untuk menyimpan layout';
+        }
+      }
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'h' || e.key === 'H') {
-          if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'SELECT') return;
-          e.preventDefault(); togglePanel();
+          if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+          e.preventDefault();
+          toggleDisplayMode();
         }
       });
 
-      // Init
-      if (!loadFromStorage()) showToast('👋 Tambahkan overlay lewat URL atau file lokal');
-      const hideParam = new URLSearchParams(location.search).get('hide');
-      const savedPanel = localStorage.getItem('overlay_panel_v2');
-      if ((hideParam === '1' || savedPanel === 'hide') && panelVisible) togglePanel();
-      updateCount();
-      window.OverlayAggregator = { addOverlay, removeOverlay, bringToFront, sendToBack, toggleMute, resetAll, exportConfig, importConfig, togglePanel };
+      // Mulai
+      initializeOverlays();
+
+      // Jika parameter ?display=1, langsung mode display
+      if (new URLSearchParams(location.search).get('display') === '1') {
+        toggleDisplayMode();
+      } else {
+        showSaveButton();
+      }
+
+      // Ekspos API global
+      window.OverlayAggregator = {
+        savePositions,
+        toggleDisplayMode,
+      };
     })();
   </script>
-  <!-- ====== REMOTE CONFIG LOADER (FIX) ====== -->
-<script>
-  (function loadRemoteConfig() {
-    const params = new URLSearchParams(window.location.search);
-    const data = params.get('data');
-    if (!data) return;
-
-    try {
-      const decoded = atob(decodeURIComponent(data));
-      const parsed = JSON.parse(decoded);
-      if (!Array.isArray(parsed) || parsed.length === 0) return;
-
-      console.log('[Remote] 📦 Data dari URL ditemukan:', parsed.length, 'overlay');
-
-      // Tunggu sampai window.OverlayAggregator siap (fungsi addOverlay tersedia)
-      function applyOverlays() {
-        if (typeof window.OverlayAggregator === 'undefined' || typeof window.OverlayAggregator.addOverlay !== 'function') {
-          console.warn('[Remote] Menunggu OverlayAggregator siap...');
-          setTimeout(applyOverlays, 100);
-          return;
-        }
-
-        const { addOverlay, resetAll, removeOverlay } = window.OverlayAggregator;
-
-        // Hapus semua overlay yang ada (tanpa konfirmasi)
-        // Karena resetAll pakai confirm, kita bypass dengan menghapus satu per satu
-        // Ambil semua elemen overlay yang ada di canvas
-        const canvas = document.getElementById('overlay-canvas');
-        const existingItems = canvas.querySelectorAll('.overlay-item');
-        existingItems.forEach(el => {
-          const id = el.dataset.id;
-          if (id) removeOverlay(id);
-        });
-
-        // Tambahkan overlay dari URL
-        parsed.forEach((item, index) => {
-          let type = 'iframe'; // semua dari control.html adalah iframe
-          let url = item.url || '';
-          // Jika tidak ada URL tapi ada teks, buat data URL
-          if (!url && item.text) {
-            const html = `<!DOCTYPE html><html><head><style>
-              body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh;
-                     background:transparent; color:#fff; font-family:'Segoe UI',Arial,sans-serif;
-                     font-size:60px; font-weight:bold; text-shadow:0 0 30px rgba(0,0,0,0.9);
-                     text-align:center; padding:20px; word-break:break-word; }
-            </style></head><body>${item.text}</body></html>`;
-            url = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
-          }
-          if (!url) return; // skip jika tetap kosong
-
-          // Siapkan opsi
-          const opts = {
-            x: parseFloat(item.x) || 0,
-            y: parseFloat(item.y) || 0,
-            width: parseFloat(item.width) || 380,
-            height: parseFloat(item.height) || 280,
-            zIndex: parseInt(item.zIndex) || (20 + index),
-            muted: false,
-            label: item.name || ('Overlay ' + (index+1)),
-            originalWidth: parseFloat(item.width) || 380,
-            originalHeight: parseFloat(item.height) || 280,
-          };
-
-          // Panggil addOverlay
-          addOverlay(type, url, opts);
-          console.log('[Remote] ✅ Ditambahkan:', item.name || url);
-        });
-
-        // Simpan ke localStorage
-        setTimeout(() => {
-          if (typeof window.OverlayAggregator.saveToStorage === 'function') {
-            window.OverlayAggregator.saveToStorage();
-          }
-          console.log('[Remote] ✅ Semua overlay dari URL dimuat!');
-        }, 200);
-      }
-
-      // Jalankan applyOverlays setelah halaman dan semua script siap
-      if (document.readyState === 'complete') {
-        applyOverlays();
-      } else {
-        window.addEventListener('load', applyOverlays);
-      }
-
-    } catch (e) {
-      console.warn('[Remote] Gagal parse data URL:', e);
-    }
-  })();
-</script>
 </body>
 </html>
