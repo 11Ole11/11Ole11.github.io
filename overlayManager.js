@@ -1,198 +1,252 @@
-/**
- * ================================================================
- * OverlayHub v1.0 — overlayManager.js
- *
- * Bertanggung jawab atas lifecycle semua overlay:
- *   - Membuat elemen wrapper + iframe untuk setiap overlay
- *   - Merender semua overlay yang aktif ke DOM
- *   - Menghapus semua overlay dari DOM
- *
- * DEPENDENCY: utils.js dan layoutManager.js harus dimuat sebelum ini.
- * ================================================================
- */
+// ================================================================
+//   TRANSPARENT OVERLAY AGGREGATOR v1.0 — overlay.js
+//   Core Engine: membaca config → generate iframe → mount ke canvas
+//
+//   ⚠️  Jangan edit file ini kecuali Anda tahu yang Anda lakukan
+// ================================================================
 
-const OverlayManager = (() => {
+(function () {
   'use strict';
 
-  /** ID dari container utama di index.html */
-  const CONTAINER_ID = 'overlay-container';
+  // ─── STATE ────────────────────────────────────────────────────
+  var canvas = null;
+  var stats  = { total: 0, loaded: 0, skipped: 0, errors: 0 };
+  var debugEl = null;
 
+  // ─── INISIALISASI ─────────────────────────────────────────────
+  function init() {
+    canvas = document.getElementById('overlay-canvas');
 
-  /* ── Dapatkan Container ──────────────────────────────────────── */
-
-  /**
-   * Dapatkan elemen container utama dari DOM.
-   * Jika tidak ditemukan, buat baru dan tambahkan ke body.
-   *
-   * @returns {HTMLElement}
-   */
-  function getContainer() {
-    let container = document.getElementById(CONTAINER_ID);
-
-    if (!container) {
-      Utils.warn(`Elemen #${CONTAINER_ID} tidak ditemukan di HTML. Membuat baru...`);
-      container = document.createElement('div');
-      container.id = CONTAINER_ID;
-      document.body.appendChild(container);
+    if (!canvas) {
+      console.error('[OA] ❌ Element #overlay-canvas tidak ditemukan!');
+      return;
     }
 
-    return container;
-  }
-
-
-  /* ── Buat Satu Elemen Overlay ───────────────────────────────── */
-
-  /**
-   * Buat elemen DOM untuk satu overlay: sebuah wrapper div
-   * berisi satu iframe yang memuat URL overlay.
-   *
-   * @param {Object} overlay - Data overlay dari config
-   * @param {number} index   - Posisi dalam array overlays
-   * @returns {HTMLElement}  - Wrapper div yang siap dimasukkan ke container
-   */
-  function createOverlayElement(overlay, index) {
-    // ── Wrapper Div ────────────────────────────────────────────
-    const wrapper = document.createElement('div');
-    wrapper.className = 'overlay-wrapper';
-
-    // Data attributes untuk debugging dan referensi
-    wrapper.dataset.overlayIndex = index;
-    wrapper.dataset.overlayName  = overlay.name || `overlay-${index}`;
-
-    // Terapkan posisi, ukuran, transform, dll. via LayoutManager
-    LayoutManager.applyLayout(wrapper, overlay);
-
-    // ── iframe ─────────────────────────────────────────────────
-    const iframe = document.createElement('iframe');
-    iframe.className = 'overlay-iframe';
-    iframe.src = overlay.url.trim();
-
-    // Atribut penting untuk transparansi iframe
-    iframe.setAttribute('allowtransparency', 'true');
-    iframe.setAttribute('frameborder', '0');
-    iframe.setAttribute('scrolling', 'no');
-    iframe.setAttribute('marginwidth', '0');
-    iframe.setAttribute('marginheight', '0');
-
-    // Izin tambahan yang umum diperlukan overlay
-    iframe.setAttribute(
-      'allow',
-      'autoplay; clipboard-read; clipboard-write; microphone; camera'
-    );
-
-    // Jangan bocorkan referrer ke layanan overlay
-    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-
-    // Log error jika iframe gagal dimuat
-    iframe.addEventListener('error', () => {
-      Utils.warn(`Gagal memuat iframe: "${overlay.name}" → ${overlay.url}`);
-    });
-
-    wrapper.appendChild(iframe);
-
-    Utils.log(`Overlay dibuat: "${overlay.name}" [${index}]`, {
-      url    : overlay.url,
-      posisi : { x: overlay.x, y: overlay.y },
-      ukuran : { lebar: overlay.width, tinggi: overlay.height },
-      z      : overlay.z
-    });
-
-    return wrapper;
-  }
-
-
-  /* ── Render Semua Overlay ────────────────────────────────────── */
-
-  /**
-   * Iterasi seluruh array overlays dari config,
-   * buat elemen DOM untuk setiap overlay yang aktif dan valid,
-   * lalu tambahkan ke container.
-   *
-   * Overlay dengan enabled: false akan dilewati tanpa error.
-   * Overlay dengan URL tidak valid akan dilewati dengan peringatan.
-   *
-   * @param {Array} overlays - Array overlay dari OVERLAY_CONFIG.overlays
-   */
-  function renderAllOverlays(overlays) {
-    const container  = getContainer();
-    let   totalAktif = 0;
-    let   totalSkip  = 0;
-
-    overlays.forEach((overlay, index) => {
-
-      // Lewati overlay yang dinonaktifkan
-      if (overlay.enabled === false) {
-        Utils.log(`Dilewati (disabled): "${overlay.name || index}"`);
-        totalSkip++;
-        return;
-      }
-
-      // Validasi data overlay
-      if (!Utils.validateOverlay(overlay, index)) {
-        totalSkip++;
-        return;
-      }
-
-      // Buat dan tambahkan elemen ke container
-      try {
-        const element = createOverlayElement(overlay, index);
-        container.appendChild(element);
-        totalAktif++;
-      } catch (err) {
-        console.error(
-          `[OverlayHub] Gagal membuat overlay[${index}] "${overlay.name}":`,
-          err
-        );
-        totalSkip++;
-      }
-
-    });
-
-    Utils.log(
-      `Render selesai. Aktif: ${totalAktif} | Dilewati: ${totalSkip} | Total: ${overlays.length}`
-    );
-  }
-
-
-  /* ── Hapus Semua Overlay ─────────────────────────────────────── */
-
-  /**
-   * Hapus semua elemen overlay dari container.
-   * iframe akan berhenti memuat setelah dihapus dari DOM.
-   */
-  function destroyAllOverlays() {
-    const container = document.getElementById(CONTAINER_ID);
-    if (!container) return;
-
-    // Hapus semua child elements
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
+    if (typeof OVERLAYS === 'undefined' || !Array.isArray(OVERLAYS)) {
+      console.error('[OA] ❌ OVERLAYS tidak ditemukan. Pastikan config.js sudah dimuat!');
+      return;
     }
 
-    Utils.log('Semua overlay dihapus dari DOM.');
+    var cfg = resolveConfig();
+
+    // Filter overlay yang aktif (enabled !== false)
+    var activeOverlays = OVERLAYS.filter(function (o) {
+      return o.enabled !== false;
+    });
+
+    stats.total = activeOverlays.length;
+
+    log('🚀 Transparent Overlay Aggregator v1.0 dimulai');
+    log('📦 Total OVERLAYS: ' + OVERLAYS.length + ' | Aktif: ' + stats.total);
+
+    if (stats.total === 0) {
+      log('⚠️ Tidak ada overlay aktif. Set enabled: true pada config.js', 'warn');
+      return;
+    }
+
+    // Lazy load setiap iframe dengan delay bertahap
+    activeOverlays.forEach(function (overlay, index) {
+      var delay = index * cfg.lazyLoadDelay;
+      setTimeout(function () {
+        buildFrame(overlay, index, cfg);
+      }, delay);
+    });
+
+    // Tampilkan debug panel jika aktif
+    if (cfg.debug) {
+      setTimeout(function () {
+        buildDebugPanel(activeOverlays);
+      }, 300);
+    }
   }
 
+  // ─── BUILD IFRAME ─────────────────────────────────────────────
+  function buildFrame(overlay, index, cfg) {
 
-  /* ── Reload Overlay ──────────────────────────────────────────── */
+    // Skip jika URL kosong / belum diisi
+    if (!overlay.url || overlay.url.trim() === '') {
+      stats.skipped++;
+      log('⏭ Skip [' + overlay.name + ']: URL belum diisi');
+      refreshDebugStats();
+      return;
+    }
 
-  /**
-   * Hapus semua overlay yang ada, lalu render ulang dari config.
-   * Berguna jika config diubah secara programatik tanpa refresh halaman.
-   *
-   * @param {Array} overlays - Array overlay baru
-   */
-  function reloadOverlays(overlays) {
-    destroyAllOverlays();
-    renderAllOverlays(overlays);
-    Utils.log('Overlay di-reload.');
+    try {
+      // ── Wrapper div ──────────────────────────────────────────
+      var wrapper = document.createElement('div');
+      wrapper.className   = 'overlay-wrapper';
+      wrapper.id          = 'oa-' + index;
+      wrapper.setAttribute('data-overlay-name', overlay.name);
+
+      var wLeft   = toDim(overlay.x      != null ? overlay.x      : 0);
+      var wTop    = toDim(overlay.y      != null ? overlay.y      : 0);
+      var wWidth  = toDim(overlay.width  != null ? overlay.width  : '100%');
+      var wHeight = toDim(overlay.height != null ? overlay.height : '100%');
+      var wZ      = overlay.zIndex  != null ? overlay.zIndex  : 1;
+      var wOpac   = overlay.opacity != null ? overlay.opacity : 1;
+
+      wrapper.style.cssText = [
+        'position:absolute',
+        'overflow:hidden',
+        'background:transparent',
+        'pointer-events:none',
+        'left:'    + wLeft,
+        'top:'     + wTop,
+        'width:'   + wWidth,
+        'height:'  + wHeight,
+        'z-index:' + wZ,
+        'opacity:' + wOpac
+      ].join(';');
+
+      // ── Iframe ────────────────────────────────────────────────
+      var iframe = document.createElement('iframe');
+      iframe.src       = overlay.url;
+      iframe.className = 'overlay-frame';
+      iframe.title     = overlay.name;
+      iframe.setAttribute('frameborder',        '0');
+      iframe.setAttribute('scrolling',          'no');
+      iframe.setAttribute('allowtransparency',  'true');
+      iframe.setAttribute('allow',              'autoplay; clipboard-read; clipboard-write; camera; microphone');
+
+      iframe.style.cssText = [
+        'display:block',
+        'width:100%',
+        'height:100%',
+        'border:none',
+        'outline:none',
+        'background:transparent',
+        'pointer-events:none'
+      ].join(';');
+
+      // ── Event handlers ────────────────────────────────────────
+      iframe.addEventListener('load', function () {
+        stats.loaded++;
+        log('✅ [' + stats.loaded + '/' + stats.total + '] Loaded: ' + overlay.name);
+        refreshDebugStats();
+      });
+
+      iframe.addEventListener('error', function () {
+        stats.errors++;
+        log('❌ Error saat memuat: ' + overlay.name, 'error');
+        refreshDebugStats();
+      });
+
+      // ── Mount ─────────────────────────────────────────────────
+      wrapper.appendChild(iframe);
+      canvas.appendChild(wrapper);
+
+      log('⚙️  Generating: ' + overlay.name +
+          ' | pos(' + wLeft + ',' + wTop + ')' +
+          ' size(' + wWidth + 'x' + wHeight + ')' +
+          ' z:' + wZ);
+
+    } catch (err) {
+      stats.errors++;
+      log('💥 Exception [' + overlay.name + ']: ' + err.message, 'error');
+      refreshDebugStats();
+    }
   }
 
+  // ─── DEBUG PANEL ──────────────────────────────────────────────
+  function buildDebugPanel(overlays) {
+    debugEl = document.createElement('div');
+    debugEl.id = 'oa-debug-panel';
+    debugEl.style.cssText = [
+      'position:fixed',
+      'top:12px',
+      'right:12px',
+      'background:rgba(12,12,12,0.88)',
+      'color:#d4d4d4',
+      'font-family:Consolas,monospace',
+      'font-size:11px',
+      'line-height:1.7',
+      'padding:12px 16px',
+      'border-radius:8px',
+      'z-index:2147483647',
+      'pointer-events:none',
+      'max-width:300px',
+      'border:1px solid rgba(255,255,255,0.1)',
+      'backdrop-filter:blur(4px)'
+    ].join(';');
 
-  /* ── Public API ──────────────────────────────────────────────── */
-  return {
-    renderAllOverlays,
-    destroyAllOverlays,
-    reloadOverlays
-  };
+    var rows = overlays.map(function (o) {
+      var hasUrl = o.url && o.url.trim() !== '';
+      return '<div>' +
+        (hasUrl ? '🟢' : '⚫') +
+        ' ' + escHtml(o.name) +
+      '</div>';
+    }).join('');
+
+    debugEl.innerHTML =
+      '<div style="color:#facc15;font-weight:bold;font-size:12px;margin-bottom:4px">' +
+        '⚡ Overlay Aggregator [DEBUG]' +
+      '</div>' +
+      '<div id="oa-debug-stats" style="color:#7dd3fc;margin-bottom:8px">' +
+        'Loaded: <b>0</b>/' + overlays.length +
+        ' &nbsp;|&nbsp; Error: <b style="color:#f87171">0</b>' +
+        ' &nbsp;|&nbsp; Skip: <b style="color:#a3a3a3">0</b>' +
+      '</div>' +
+      '<hr style="border:0;border-top:1px solid #2a2a2a;margin:6px 0">' +
+      rows;
+
+    document.body.appendChild(debugEl);
+  }
+
+  function refreshDebugStats() {
+    var el = document.getElementById('oa-debug-stats');
+    if (!el) return;
+    el.innerHTML =
+      'Loaded: <b>' + stats.loaded + '</b>/' + stats.total +
+      ' &nbsp;|&nbsp; Error: <b style="color:#f87171">' + stats.errors + '</b>' +
+      ' &nbsp;|&nbsp; Skip: <b style="color:#a3a3a3">' + stats.skipped + '</b>';
+  }
+
+  // ─── HELPERS ──────────────────────────────────────────────────
+
+  // Konversi number → px string, biarkan string apa adanya
+  function toDim(val) {
+    if (typeof val === 'number') return val + 'px';
+    return String(val);
+  }
+
+  // Ambil config dengan fallback default
+  function resolveConfig() {
+    var defaults = {
+      debug         : false,
+      lazyLoadDelay : 150
+    };
+    if (typeof CONFIG !== 'undefined' && typeof CONFIG === 'object') {
+      var merged = {};
+      for (var k in defaults) merged[k] = defaults[k];
+      for (var k in CONFIG)   merged[k] = CONFIG[k];
+      return merged;
+    }
+    return defaults;
+  }
+
+  // Logger – hanya tampil jika debug: true (kecuali warn/error)
+  function log(msg, type) {
+    var lvl = type || 'log';
+    var cfg = resolveConfig();
+    if (cfg.debug) {
+      (console[lvl] || console.log)('[OA] ' + msg);
+    } else if (lvl === 'warn' || lvl === 'error') {
+      (console[lvl])('[OA] ' + msg);
+    }
+  }
+
+  // Escape HTML untuk debug panel
+  function escHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ─── BOOT ─────────────────────────────────────────────────────
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();
