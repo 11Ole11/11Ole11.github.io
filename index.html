@@ -1,55 +1,65 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transparent Overlay Aggregator</title>
   <!--
-    viewport diset ke resolusi stream default.
-    Ubah sesuai kebutuhan: 1280 (720p), 1920 (1080p), 2560 (1440p), 3840 (4K)
+    ╔══════════════════════════════════════════════════╗
+    ║   TRANSPARENT OVERLAY AGGREGATOR v1.0            ║
+    ║   OBS Browser Source – Transparent Canvas        ║
+    ║                                                  ║
+    ║   Cara pakai:                                    ║
+    ║   1. Edit config.js → isi link overlay Anda      ║
+    ║   2. Buka file ini di OBS Browser Source         ║
+    ║   3. Set ukuran sesuai resolusi streaming Anda   ║
+    ╚══════════════════════════════════════════════════╝
   -->
-  <meta name="viewport" content="width=1920" />
-  <meta name="description" content="OverlayHub — Multi Overlay Loader untuk OBS, PRISM, Streamlabs" />
-  <title>OverlayHub v1.0</title>
-
-  <!--
-    ═══════════════════════════════════════════════════════════════
-    PANDUAN OBS BROWSER SOURCE:
-    1. Tambahkan Browser Source → Local File → pilih index.html
-    2. Width: 1920, Height: 1080 (atau sesuai resolusi stream)
-    3. Custom CSS (wajib untuk transparansi):
-       body { background-color: rgba(0, 0, 0, 0) !important; }
-    4. Centang "Allow transparency" jika tersedia
-    5. Klik OK
-    ═══════════════════════════════════════════════════════════════
-  -->
-
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!--
-    Container ini diisi secara dinamis oleh OverlayManager.
-    Jangan hapus atau ubah id="overlay-container".
-    
-    Untuk menambah overlay → edit: config.js
-  -->
-  <div id="overlay-container" role="presentation" aria-hidden="true"></div>
+  <!-- Canvas utama – semua iframe overlay dimuat di sini -->
+  <div id="overlay-canvas"></div>
+<!-- ====== AUTO UNLOCK AUDIO ====== -->
+<script>
+  (function autoUnlockAudio() {
+    // Tunggu 2 detik sampai semua iframe termuat
+    setTimeout(function() {
+      var iframes = document.querySelectorAll('iframe');
+      if (iframes.length === 0) return;
 
-  <!--
-    ═══════════════════════════════════════════════════════════════
-    URUTAN LOAD SCRIPT — SANGAT PENTING, JANGAN DIUBAH:
-    
-    1. utils.js          → Fungsi pembantu, validasi, sanitasi
-    2. config.js         → Konfigurasi overlay dari user ← EDIT INI
-    3. layoutManager.js  → Logika posisi, ukuran, transform CSS
-    4. overlayManager.js → Logika pembuatan & render iframe
-    5. script.js         → Entry point, menginisialisasi segalanya
-    ═══════════════════════════════════════════════════════════════
-  -->
-  <script src="utils.js"></script>
+      // Cara 1: Coba reload iframe dengan parameter autoplay (jika didukung)
+      iframes.forEach(function(iframe) {
+        try {
+          var src = iframe.src;
+          if (src && !src.includes('autoplay=1')) {
+            var separator = src.includes('?') ? '&' : '?';
+            iframe.src = src + separator + 'autoplay=1&mute=0';
+          }
+        } catch(e) {}
+      });
+
+      // Cara 2: Kirim pesan ke iframe untuk minta izin suara (jika iframe mendengar)
+      setTimeout(function() {
+        iframes.forEach(function(iframe) {
+          try {
+            iframe.contentWindow.postMessage({ type: 'UNLOCK_AUDIO', command: 'play' }, '*');
+          } catch(e) {}
+        });
+      }, 500);
+
+      // Cara 3: OBS-specific - Trigger event klik virtual ke body
+      var evt = new MouseEvent('click', { bubbles: true, cancelable: true });
+      document.body.dispatchEvent(evt);
+      
+      console.log('[OA] 🔓 Auto-unlock audio telah dicoba. Jika masih tidak bersuara, aktifkan "Control audio via OBS" di Properties.');
+    }, 2000);
+  })();
+</script>
+  <!-- Load konfigurasi dulu, baru engine -->
   <script src="config.js"></script>
-  <script src="layoutManager.js"></script>
-  <script src="overlayManager.js"></script>
-  <script src="script.js"></script>
+  <script src="overlay.js"></script>
 
 </body>
 </html>
