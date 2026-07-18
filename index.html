@@ -789,75 +789,78 @@
       window.OverlayAggregator = { addOverlay, removeOverlay, bringToFront, sendToBack, toggleMute, resetAll, exportConfig, importConfig, togglePanel };
     })();
   </script>
-  <!-- ====== REMOTE CONFIG LOADER ====== -->
+  <!-- ====== REMOTE CONFIG LOADER (FIX) ====== -->
 <script>
   (function loadRemoteConfig() {
-    // Jika ada parameter ?data= di URL, override OVERLAYS
     const params = new URLSearchParams(window.location.search);
     const data = params.get('data');
-    if (data) {
-      try {
-        const decoded = atob(decodeURIComponent(data));
-        const parsed = JSON.parse(decoded);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Override OVERLAYS global (yang didefinisikan di config.js)
-          if (typeof window.OVERLAYS !== 'undefined') {
-            // Merge: tetap pakai yang dari URL, tapi tambahkan yang dari config jika belum ada
-            // Lebih baik: ganti total
-            window.OVERLAYS = parsed.map(o => ({
-              name: o.name || 'Overlay',
-              url: o.url || '',
-              enabled: true,
-              x: o.x || 0,
-              y: o.y || 0,
-              width: o.width || '100%',
-              height: o.height || '100%',
-              zIndex: o.zIndex || 1,
-              opacity: o.opacity || 1,
-              // Jika ada teks, kita akan proses di overlay.js (tapi overlay.js tidak support teks native)
-              // Kita akan handle teks dengan membuat iframe data:text/html
-              _text: o.text || ''
-            }));
-            console.log('[Remote] ✅ Config dari URL dimuat!', window.OVERLAYS.length, 'overlay');
-          }
-        }
-      } catch(e) {
-        console.warn('[Remote] Gagal parse data dari URL', e);
-      }
-    }
-  })();
-</script>
-<script>
-  (function initTouchGesture() {
-    let touchCount = 0;
-    let touchTimer = null;
+    if (!data) return;
 
-    document.addEventListener('touchstart', function(e) {
-      touchCount = e.touches.length; // hitung jari yang menyentuh layar
+    try {
+      const decoded = atob(decodeURIComponent(data));
+      const parsed = JSON.parse(decoded);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
 
-      // Reset timer setiap kali sentuh
-      clearTimeout(touchTimer);
+      console.log('[Remote] 📦 Data dari URL ditemukan:', parsed.length, 'overlay');
 
-      // Kalau tepat 4 jari, langsung eksekusi
-      if (touchCount === 4) {
-        e.preventDefault(); // biar gak trigger gesture lain
-        triggerEditor();
-      }
-    }, { passive: false });
-
-    function triggerEditor() {
-      // Panggil fungsi togglePanel yang sudah ada di index.html
-      if (typeof togglePanel === 'function') {
-        togglePanel();
+      // Hapus semua overlay yang sudah ada (agar tidak duplikat)
+      if (typeof resetAll === 'function') {
+        resetAll();
       } else {
-        // Fallback: coba cari tombol panel
-        const btn = document.getElementById('btnTogglePanel');
-        if (btn) btn.click();
-        console.log('🖐️ 4 jari terdeteksi!');
+        // Fallback: hapus manual
+        overlays.forEach(o => { if (o.isLocalBlob && o.url.startsWith('blob:')) URL.revokeObjectURL(o.url); });
+        overlays = [];
+        canvas.innerHTML = '';
       }
+
+      // Tambahkan setiap overlay dari data URL
+      parsed.forEach((item, index) => {
+        // Tentukan type (default iframe)
+        let type = item.type || 'iframe';
+        let url = item.url || '';
+        // Jika ada teks dan tidak ada URL, buat data URL
+        if (!url && item.text) {
+          const html = `<!DOCTYPE html><html><head><style>
+            body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh;
+                   background:transparent; color:#fff; font-family:'Segoe UI',Arial,sans-serif;
+                   font-size:60px; font-weight:bold; text-shadow:0 0 30px rgba(0,0,0,0.9);
+                   text-align:center; padding:20px; word-break:break-word; }
+          </style></head><body>${item.text}</body></html>`;
+          url = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+          type = 'iframe';
+        }
+        if (!url) return; // skip jika tetap kosong
+
+        // Panggil fungsi addOverlay yang sudah ada
+        if (typeof addOverlay === 'function') {
+          const opts = {
+            x: item.x || 0,
+            y: item.y || 0,
+            width: item.width || 380,
+            height: item.height || 280,
+            zIndex: item.zIndex || (20 + index),
+            muted: item.muted || false,
+            label: item.label || item.name || ('Overlay ' + (index+1)),
+            originalWidth: item.originalWidth || item.width || 380,
+            originalHeight: item.originalHeight || item.height || 280,
+          };
+          // Panggil addOverlay
+          addOverlay(type, url, opts);
+        } else {
+          console.warn('[Remote] Fungsi addOverlay belum siap, coba lagi nanti.');
+        }
+      });
+
+      // Simpan ke localStorage agar persisten
+      setTimeout(() => {
+        if (typeof saveToStorage === 'function') saveToStorage();
+        if (typeof updateCount === 'function') updateCount();
+        console.log('[Remote] ✅ Semua overlay dari URL dimuat!');
+      }, 100);
+
+    } catch (e) {
+      console.warn('[Remote] Gagal parse data URL:', e);
     }
-    // Opsional: feedback visual saat 4 jari
-    console.log('🖐️ Gestur 4 jari aktif — sentuh layar dengan 4 jari untuk membuka editor.');
   })();
 </script>
 </body>
