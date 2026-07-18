@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <!--
+    viewport diset ke resolusi stream default.
+    Ubah sesuai kebutuhan: 1280 (720p), 1920 (1080p), 2560 (1440p), 3840 (4K)
+  -->
+  <meta name="viewport" content="width=1920" />
+  <meta name="description" content="OverlayHub — Multi Overlay Loader untuk OBS, PRISM, Streamlabs" />
+  <title>OverlayHub v1.0</title>
+
+  <!--
+    ═══════════════════════════════════════════════════════════════
+    PANDUAN OBS BROWSER SOURCE:
+    1. Tambahkan Browser Source → Local File → pilih index.html
+    2. Width: 1920, Height: 1080 (atau sesuai resolusi stream)
+    3. Custom CSS (wajib untuk transparansi):
+       body { background-color: rgba(0, 0, 0, 0) !important; }
+    4. Centang "Allow transparency" jika tersedia
+    5. Klik OK
+    ═══════════════════════════════════════════════════════════════
+  -->
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!--
+    Container ini diisi secara dinamis oleh OverlayManager.
+    Jangan hapus atau ubah id="overlay-container".
+    
+    Untuk menambah overlay → edit: js/config.js
+  -->
+  <div id="overlay-container" role="presentation" aria-hidden="true"></div>
+
+  <!--
+    ═══════════════════════════════════════════════════════════════
+    URUTAN LOAD SCRIPT — SANGAT PENTING, JANGAN DIUBAH:
+    
+    1. utils.js          → Fungsi pembantu, validasi, sanitasi
+    2. config.js         → Konfigurasi overlay dari user ← EDIT INI
+    3. layoutManager.js  → Logika posisi, ukuran, transform CSS
+    4. overlayManager.js → Logika pembuatan & render iframe
+    5. script.js         → Entry point, menginisialisasi segalanya
+    ═══════════════════════════════════════════════════════════════
+  -->
+  <script src="js/utils.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/layoutManager.js"></script>
+  <script src="js/overlayManager.js"></script>
+  <script src="js/script.js"></script>
+
+</body>
+</html>
