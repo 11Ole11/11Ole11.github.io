@@ -2,64 +2,863 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transparent Overlay Aggregator</title>
-  <!--
-    ╔══════════════════════════════════════════════════╗
-    ║   TRANSPARENT OVERLAY AGGREGATOR v1.0            ║
-    ║   OBS Browser Source – Transparent Canvas        ║
-    ║                                                  ║
-    ║   Cara pakai:                                    ║
-    ║   1. Edit config.js → isi link overlay Anda      ║
-    ║   2. Buka file ini di OBS Browser Source         ║
-    ║   3. Set ukuran sesuai resolusi streaming Anda   ║
-    ╚══════════════════════════════════════════════════╝
-  -->
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Transparent Overlay Aggregator • Pro</title>
+  <style>
+    :root {
+      --panel-bg: rgba(18, 22, 28, 0.95);
+      --text: #e2e8f0;
+      --accent: #38bdf8;
+      --accent-hover: #7dd3fc;
+      --danger: #f87171;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --border: rgba(255, 255, 255, 0.12);
+      --shadow: 0 20px 40px rgba(0,0,0,0.7);
+      --radius: 12px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent !important;
+      overflow: hidden;
+      font-family: var(--font);
+    }
+
+    /* ========== KANVAS TRANSPARAN ========== */
+    #overlay-canvas {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      z-index: 1;
+    }
+
+    /* ========== OVERLAY ITEM ========== */
+    .overlay-item {
+      position: absolute;
+      min-width: 40px;
+      min-height: 40px;
+      cursor: default;
+      z-index: 10;
+      background: transparent;
+      will-change: transform;
+    }
+
+    /* Drag shield menutupi seluruh area untuk geser mudah */
+    .drag-shield {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 20;
+      background: transparent;
+      cursor: move;
+      touch-action: none;
+      pointer-events: auto;
+      transition: opacity 0.15s;
+    }
+
+    /* Sembunyikan shield di display mode */
+    body.display-mode .drag-shield {
+      display: none !important;
+    }
+
+    /* Konten visual */
+    .overlay-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    /* Aktifkan interaksi di dalam konten hanya saat display mode */
+    body.display-mode .overlay-content {
+      pointer-events: auto;
+    }
+
+    .overlay-content iframe,
+    .overlay-content video,
+    .overlay-content img {
+      display: block;
+      border: none;
+      background: transparent;
+      pointer-events: auto;
+    }
+
+    .overlay-content img,
+    .overlay-content video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Label overlay */
+    .overlay-label {
+      position: absolute;
+      top: -26px;
+      left: 0;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      z-index: 30;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      letter-spacing: 0.3px;
+    }
+
+    .overlay-item.edit-mode:hover .overlay-label,
+    .overlay-item.dragging .overlay-label,
+    .overlay-item.resizing .overlay-label {
+      opacity: 1;
+    }
+
+    body.display-mode .overlay-label {
+      display: none !important;
+    }
+
+    /* Resize handles */
+    .resize-handle {
+      position: absolute;
+      z-index: 35;
+      background: var(--accent);
+      border: 2px solid white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: auto;
+    }
+
+    .overlay-item.edit-mode:hover .resize-handle,
+    .overlay-item.dragging .resize-handle,
+    .overlay-item.resizing .resize-handle {
+      opacity: 1;
+    }
+
+    body.display-mode .resize-handle {
+      display: none !important;
+    }
+
+    .resize-handle.nw, .resize-handle.ne, .resize-handle.sw, .resize-handle.se {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+    }
+    .resize-handle.nw { top: -8px; left: -8px; cursor: nwse-resize; }
+    .resize-handle.ne { top: -8px; right: -8px; cursor: nesw-resize; }
+    .resize-handle.sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
+    .resize-handle.se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+    .resize-handle.n { top: -8px; left: 50%; transform: translateX(-50%); width: 30px; height: 10px; border-radius: 6px; cursor: ns-resize; }
+    .resize-handle.s { bottom: -8px; left: 50%; transform: translateX(-50%); width: 30px; height: 10px; border-radius: 6px; cursor: ns-resize; }
+    .resize-handle.e { top: 50%; right: -8px; transform: translateY(-50%); width: 10px; height: 30px; border-radius: 6px; cursor: ew-resize; }
+    .resize-handle.w { top: 50%; left: -8px; transform: translateY(-50%); width: 10px; height: 30px; border-radius: 6px; cursor: ew-resize; }
+
+    /* Tombol aksi cepat */
+    .overlay-actions {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      display: flex;
+      gap: 4px;
+      z-index: 40;
+      opacity: 1;
+      transition: opacity 0.2s;
+      pointer-events: auto;
+    }
+
+    .overlay-item.edit-mode:hover .overlay-actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    body.display-mode .overlay-actions {
+      display: none !important;
+    }
+
+    .overlay-actions button {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.6);
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      backdrop-filter: blur(6px);
+      background: rgba(20,20,30,0.7);
+      transition: all 0.15s;
+    }
+
+    .overlay-actions button:hover {
+      background: rgba(0,0,0,0.8);
+      border-color: #fff;
+    }
+
+    .btn-mute.muted {
+      background: rgba(220,38,38,0.8);
+    }
+
+    /* Panel kontrol */
+    #control-panel {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 99999;
+      background: var(--panel-bg);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      backdrop-filter: blur(16px);
+      max-width: 95vw;
+      transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    #control-panel.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-140%);
+    }
+
+    #control-panel input, #control-panel select {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: var(--font);
+      outline: none;
+      transition: 0.15s;
+    }
+
+    #control-panel input:focus, #control-panel select:focus {
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.12);
+    }
+
+    #control-panel button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      font-family: var(--font);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-add { background: var(--accent); color: #000; }
+    .btn-add:hover { background: var(--accent-hover); }
+    .btn-file { background: rgba(255,255,255,0.1); color: #fff; border-color: var(--border); }
+    .btn-save { background: var(--success); color: #000; }
+    .btn-export { background: rgba(99,102,241,0.6); color: #fff; }
+    .btn-import { background: rgba(245,158,11,0.6); color: #fff; }
+    .btn-reset { background: transparent; color: var(--danger); border-color: var(--danger); }
+    .btn-toggle { background: rgba(255,255,255,0.1); border-radius: 50%; width: 38px; height: 38px; padding: 0; font-size: 18px; }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: rgba(10,10,18,0.9);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-size: 13px;
+      z-index: 999999;
+      transition: transform 0.3s ease;
+      border: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    #indicator {
+      position: fixed;
+      top: 8px;
+      right: 16px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      z-index: 99998;
+      pointer-events: none;
+    }
+  </style>
 </head>
-<body>
+<body class="edit-mode">
 
-  <!-- Canvas utama – semua iframe overlay dimuat di sini -->
   <div id="overlay-canvas"></div>
-<!-- ====== AUTO UNLOCK AUDIO ====== -->
-<script>
-  (function autoUnlockAudio() {
-    // Tunggu 2 detik sampai semua iframe termuat
-    setTimeout(function() {
-      var iframes = document.querySelectorAll('iframe');
-      if (iframes.length === 0) return;
 
-      // Cara 1: Coba reload iframe dengan parameter autoplay (jika didukung)
-      iframes.forEach(function(iframe) {
+  <div id="control-panel">
+    <select id="typeSelect" style="min-width:100px;">
+      <option value="iframe">🌐 Link Overlay</option>
+      <option value="image">🖼️ Gambar/GIF</option>
+      <option value="video">🎬 Video</option>
+    </select>
+    <input type="text" id="urlInput" placeholder="Tempel URL / link di sini..." style="min-width:220px;" />
+    <button class="btn-add" id="btnAdd">➕ Tambah</button>
+    <button class="btn-file" id="btnFilePick">📁 File Lokal</button>
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden />
+    <button class="btn-save" id="btnSave">💾 Simpan</button>
+    <button class="btn-export" id="btnExport">📤 Ekspor</button>
+    <button class="btn-import" id="btnImport">📥 Impor</button>
+    <input type="file" id="importFileInput" accept=".json" hidden />
+    <button class="btn-reset" id="btnReset">🗑️ Reset</button>
+    <button class="btn-toggle" id="btnTogglePanel">👁️</button>
+    <span id="overlayCount" style="color:#94a3b8; font-size:11px;">0 overlay</span>
+  </div>
+  <div id="indicator">Tekan <b>H</b> sembunyikan panel • Mode Edit</div>
+  <div id="toast"></div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById('overlay-canvas');
+      const panel = document.getElementById('control-panel');
+      const typeSelect = document.getElementById('typeSelect');
+      const urlInput = document.getElementById('urlInput');
+      const btnAdd = document.getElementById('btnAdd');
+      const btnFilePick = document.getElementById('btnFilePick');
+      const fileInput = document.getElementById('fileInput');
+      const btnSave = document.getElementById('btnSave');
+      const btnExport = document.getElementById('btnExport');
+      const btnImport = document.getElementById('btnImport');
+      const importFileInput = document.getElementById('importFileInput');
+      const btnReset = document.getElementById('btnReset');
+      const btnTogglePanel = document.getElementById('btnTogglePanel');
+      const overlayCountSpan = document.getElementById('overlayCount');
+      const toast = document.getElementById('toast');
+      const indicator = document.getElementById('indicator');
+
+      let overlays = [];
+      let idCounter = 0;
+      let panelVisible = true;
+      let isDisplayMode = false;
+      const STORAGE_KEY = 'overlay_agg_v2';
+
+      // Toast
+      let toastTimer;
+      function showToast(msg) {
+        clearTimeout(toastTimer);
+        toast.textContent = msg;
+        toast.classList.add('show');
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+      }
+
+      function generateId() { return 'ov_' + Date.now() + '_' + (++idCounter); }
+
+      // Update ukuran iframe dengan scaling proporsional
+      function applyIframeScale(item, overlayData) {
+        if (overlayData.type !== 'iframe') return;
+        const iframe = item.querySelector('iframe');
+        if (!iframe) return;
+        const origW = overlayData.originalWidth || overlayData.width;
+        const origH = overlayData.originalHeight || overlayData.height;
+        const scaleX = overlayData.width / origW;
+        const scaleY = overlayData.height / origH;
+        iframe.style.transform = `scale(${scaleX}, ${scaleY})`;
+        iframe.style.transformOrigin = '0 0';
+        iframe.style.width = origW + 'px';
+        iframe.style.height = origH + 'px';
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+      }
+
+      function createOverlayElement(data) {
+        const item = document.createElement('div');
+        item.className = 'overlay-item edit-mode';
+        item.dataset.id = data.id;
+        item.style.left = data.x + 'px';
+        item.style.top = data.y + 'px';
+        item.style.width = data.width + 'px';
+        item.style.height = data.height + 'px';
+        item.style.zIndex = data.zIndex;
+
+        // Label
+        const label = document.createElement('div');
+        label.className = 'overlay-label';
+        label.textContent = data.label || data.type;
+        item.appendChild(label);
+
+        // Konten
+        const content = document.createElement('div');
+        content.className = 'overlay-content';
+        if (data.type === 'iframe') {
+          const iframe = document.createElement('iframe');
+          iframe.src = data.url;
+          iframe.allow = 'autoplay; camera; microphone; fullscreen';
+          iframe.allowFullscreen = true;
+          iframe.title = data.label;
+          content.appendChild(iframe);
+        } else if (data.type === 'image') {
+          const img = document.createElement('img');
+          img.src = data.url;
+          img.alt = data.label;
+          img.draggable = false;
+          content.appendChild(img);
+        } else if (data.type === 'video') {
+          const video = document.createElement('video');
+          video.src = data.url;
+          video.autoplay = true;
+          video.loop = true;
+          video.muted = data.muted ?? true;
+          video.playsInline = true;
+          content.appendChild(video);
+          video.play().catch(() => {});
+        }
+        item.appendChild(content);
+
+        // Drag shield (area geser transparan)
+        const shield = document.createElement('div');
+        shield.className = 'drag-shield';
+        shield.addEventListener('mousedown', onDragStart);
+        shield.addEventListener('touchstart', onDragStart, { passive: false });
+        item.appendChild(shield);
+
+        // Resize handles
+        ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
+          const h = document.createElement('div');
+          h.className = 'resize-handle ' + dir;
+          h.dataset.direction = dir;
+          h.addEventListener('mousedown', onResizeStart);
+          h.addEventListener('touchstart', onResizeStart, { passive: false });
+          item.appendChild(h);
+        });
+
+        // Action buttons
+        const actions = document.createElement('div');
+        actions.className = 'overlay-actions';
+        actions.innerHTML = `
+          <button class="btn-front" title="Ke depan">⬆</button>
+          <button class="btn-back" title="Ke belakang">⬇</button>
+          ${data.type === 'video' ? `<button class="btn-mute ${data.muted ? 'muted' : ''}" title="Mute">🔊</button>` : ''}
+          <button class="btn-delete" title="Hapus">✕</button>
+        `;
+        actions.querySelector('.btn-front').addEventListener('click', (e) => { e.stopPropagation(); bringToFront(data.id); });
+        actions.querySelector('.btn-back').addEventListener('click', (e) => { e.stopPropagation(); sendToBack(data.id); });
+        if (data.type === 'video') {
+          actions.querySelector('.btn-mute').addEventListener('click', (e) => { e.stopPropagation(); toggleMute(data.id); });
+        }
+        actions.querySelector('.btn-delete').addEventListener('click', (e) => { e.stopPropagation(); removeOverlay(data.id); });
+        item.appendChild(actions);
+
+        // Terapkan scaling iframe setelah elemen ada di DOM
+        if (data.type === 'iframe') {
+          requestAnimationFrame(() => applyIframeScale(item, data));
+        }
+
+        canvas.appendChild(item);
+        return item;
+      }
+
+      // Drag
+      let dragState = null;
+      function onDragStart(e) {
+        if (isDisplayMode) return;
+        e.preventDefault();
+        const item = e.target.closest('.overlay-item');
+        if (!item) return;
+        const overlay = overlays.find(o => o.id === item.dataset.id);
+        if (!overlay) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        dragState = { overlayId: overlay.id, item, startX: clientX, startY: clientY, origLeft: overlay.x, origTop: overlay.y };
+        item.classList.add('dragging');
+        bringToFront(overlay.id);
+        window.addEventListener('mousemove', onDragMove);
+        window.addEventListener('mouseup', onDragEnd);
+        window.addEventListener('touchmove', onDragMove, { passive: false });
+        window.addEventListener('touchend', onDragEnd);
+      }
+
+      function onDragMove(e) {
+        if (!dragState) return;
+        e.preventDefault();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = cx - dragState.startX, dy = cy - dragState.startY;
+        const newLeft = Math.max(-60, dragState.origLeft + dx);
+        const newTop = Math.max(-60, dragState.origTop + dy);
+        dragState.item.style.left = newLeft + 'px';
+        dragState.item.style.top = newTop + 'px';
+        const ov = overlays.find(o => o.id === dragState.overlayId);
+        if (ov) { ov.x = newLeft; ov.y = newTop; }
+      }
+
+      function onDragEnd() {
+        if (!dragState) return;
+        dragState.item.classList.remove('dragging');
+        dragState = null;
+        window.removeEventListener('mousemove', onDragMove);
+        window.removeEventListener('mouseup', onDragEnd);
+        window.removeEventListener('touchmove', onDragMove);
+        window.removeEventListener('touchend', onDragEnd);
+        saveToStorage();
+      }
+
+      // Resize
+      let resizeState = null;
+      function onResizeStart(e) {
+        if (isDisplayMode) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const handle = e.target.closest('.resize-handle');
+        const item = e.target.closest('.overlay-item');
+        if (!handle || !item) return;
+        const overlay = overlays.find(o => o.id === item.dataset.id);
+        if (!overlay) return;
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        resizeState = {
+          overlayId: overlay.id, item, direction: handle.dataset.direction,
+          startX: cx, startY: cy, origLeft: overlay.x, origTop: overlay.y,
+          origWidth: overlay.width, origHeight: overlay.height
+        };
+        item.classList.add('resizing');
+        window.addEventListener('mousemove', onResizeMove);
+        window.addEventListener('mouseup', onResizeEnd);
+        window.addEventListener('touchmove', onResizeMove, { passive: false });
+        window.addEventListener('touchend', onResizeEnd);
+      }
+
+      function onResizeMove(e) {
+        if (!resizeState) return;
+        e.preventDefault();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = cx - resizeState.startX, dy = cy - resizeState.startY;
+        const dir = resizeState.direction;
+        let newLeft = resizeState.origLeft, newTop = resizeState.origTop;
+        let newWidth = resizeState.origWidth, newHeight = resizeState.origHeight;
+
+        if (dir.includes('e')) newWidth = Math.max(50, resizeState.origWidth + dx);
+        if (dir.includes('w')) { newWidth = Math.max(50, resizeState.origWidth - dx); newLeft = resizeState.origLeft + (resizeState.origWidth - newWidth); }
+        if (dir.includes('s')) newHeight = Math.max(50, resizeState.origHeight + dy);
+        if (dir.includes('n')) { newHeight = Math.max(50, resizeState.origHeight - dy); newTop = resizeState.origTop + (resizeState.origHeight - newHeight); }
+
+        resizeState.item.style.left = newLeft + 'px';
+        resizeState.item.style.top = newTop + 'px';
+        resizeState.item.style.width = newWidth + 'px';
+        resizeState.item.style.height = newHeight + 'px';
+
+        const ov = overlays.find(o => o.id === resizeState.overlayId);
+        if (ov) {
+          ov.x = newLeft; ov.y = newTop; ov.width = newWidth; ov.height = newHeight;
+          if (ov.type === 'iframe') applyIframeScale(resizeState.item, ov);
+        }
+      }
+
+      function onResizeEnd() {
+        if (!resizeState) return;
+        resizeState.item.classList.remove('resizing');
+        resizeState = null;
+        window.removeEventListener('mousemove', onResizeMove);
+        window.removeEventListener('mouseup', onResizeEnd);
+        window.removeEventListener('touchmove', onResizeMove);
+        window.removeEventListener('touchend', onResizeEnd);
+        saveToStorage();
+      }
+
+      function addOverlay(type, url, opts = {}) {
+        if (!url?.trim()) { showToast('⚠️ URL tidak boleh kosong'); return; }
+        const id = generateId();
+        const count = overlays.length;
+        const offsetX = (count % 4) * 28, offsetY = Math.floor(count/4) * 28;
+        const defaultW = type === 'video' ? 560 : 380;
+        const defaultH = type === 'video' ? 315 : 280;
+        const data = {
+          id, type, url: url.trim(),
+          x: opts.x ?? 100 + offsetX, y: opts.y ?? 100 + offsetY,
+          width: opts.width ?? defaultW, height: opts.height ?? defaultH,
+          originalWidth: opts.originalWidth ?? (opts.width ?? defaultW),
+          originalHeight: opts.originalHeight ?? (opts.height ?? defaultH),
+          zIndex: opts.zIndex ?? 20 + count,
+          muted: opts.muted ?? (type === 'video' ? true : false),
+          label: opts.label || (type + ': ' + (() => { try { const u = new URL(url.trim()); return u.hostname; } catch { return url.trim().split('/').pop()?.split('?')[0] || 'link'; } })()),
+          isLocalBlob: opts.isLocalBlob || false
+        };
+        overlays.push(data);
+        createOverlayElement(data);
+        updateCount();
+        saveToStorage();
+        showToast('✅ Ditambahkan: ' + data.label);
+      }
+
+      function removeOverlay(id) {
+        const idx = overlays.findIndex(o => o.id === id);
+        if (idx === -1) return;
+        const ov = overlays[idx];
+        if (ov.isLocalBlob && ov.url.startsWith('blob:')) URL.revokeObjectURL(ov.url);
+        overlays.splice(idx,1);
+        canvas.querySelector(`[data-id="${id}"]`)?.remove();
+        updateCount();
+        saveToStorage();
+        showToast('🗑️ Overlay dihapus');
+      }
+
+      function bringToFront(id) {
+        const ov = overlays.find(o => o.id === id);
+        if (!ov) return;
+        const maxZ = Math.max(...overlays.map(o => o.zIndex), 0);
+        ov.zIndex = maxZ + 1;
+        const item = canvas.querySelector(`[data-id="${id}"]`);
+        if (item) item.style.zIndex = ov.zIndex;
+        saveToStorage();
+      }
+
+      function sendToBack(id) {
+        const ov = overlays.find(o => o.id === id);
+        if (!ov) return;
+        const minZ = Math.min(...overlays.map(o => o.zIndex), 10);
+        ov.zIndex = Math.max(1, minZ - 1);
+        const item = canvas.querySelector(`[data-id="${id}"]`);
+        if (item) item.style.zIndex = ov.zIndex;
+        saveToStorage();
+      }
+
+      function toggleMute(id) {
+        const ov = overlays.find(o => o.id === id);
+        if (!ov || ov.type !== 'video') return;
+        ov.muted = !ov.muted;
+        const item = canvas.querySelector(`[data-id="${id}"]`);
+        if (item) {
+          const video = item.querySelector('video');
+          if (video) video.muted = ov.muted;
+          const btn = item.querySelector('.btn-mute');
+          if (btn) { btn.classList.toggle('muted', ov.muted); btn.textContent = ov.muted ? '🔇' : '🔊'; }
+        }
+        saveToStorage();
+      }
+
+      function updateCount() { overlayCountSpan.textContent = overlays.length + ' overlay'; }
+
+      function resetAll() {
+        if (!overlays.length) return;
+        if (!confirm('Hapus SEMUA overlay?')) return;
+        overlays.forEach(o => { if (o.isLocalBlob && o.url.startsWith('blob:')) URL.revokeObjectURL(o.url); });
+        overlays = []; canvas.innerHTML = ''; updateCount(); localStorage.removeItem(STORAGE_KEY);
+        showToast('🧹 Semua overlay dihapus');
+      }
+
+      function saveToStorage() {
+        const data = overlays.map(o => ({
+          ...o, url: o.isLocalBlob ? '[blob]' : o.url
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+
+      function loadFromStorage() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
         try {
-          var src = iframe.src;
-          if (src && !src.includes('autoplay=1')) {
-            var separator = src.includes('?') ? '&' : '?';
-            iframe.src = src + separator + 'autoplay=1&mute=0';
-          }
-        } catch(e) {}
+          const data = JSON.parse(raw);
+          canvas.innerHTML = '';
+          overlays.forEach(o => { if (o.isLocalBlob && o.url.startsWith('blob:')) URL.revokeObjectURL(o.url); });
+          overlays = [];
+          data.forEach(d => {
+            if (d.url === '[blob]' || d.isLocalBlob) {
+              const ph = { ...d, url: '', isLocalBlob: true, id: generateId(), label: (d.label||'file') + ' ⚠️' };
+              overlays.push(ph);
+              const el = createOverlayElement(ph);
+              el.querySelector('.overlay-content').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f87171;font-size:12px;">⚠️ File lokal perlu diisi ulang</div>';
+            } else {
+              const nd = { ...d, id: generateId(), originalWidth: d.originalWidth || d.width, originalHeight: d.originalHeight || d.height };
+              overlays.push(nd);
+              createOverlayElement(nd);
+            }
+          });
+          idCounter = overlays.length;
+          updateCount();
+          return true;
+        } catch { return false; }
+      }
+
+      function exportConfig() {
+        const exp = overlays.map(o => ({ ...o, url: o.isLocalBlob ? '[blob]' : o.url }));
+        const blob = new Blob([JSON.stringify(exp, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'overlays-config.json'; a.click(); showToast('📤 Konfigurasi diekspor');
+      }
+
+      function importConfig(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            canvas.innerHTML = ''; overlays = [];
+            data.forEach(d => {
+              if (d.url === '[blob]') {
+                const ph = { ...d, url: '', isLocalBlob: true, id: generateId() };
+                overlays.push(ph); createOverlayElement(ph);
+              } else {
+                const nd = { ...d, id: generateId(), originalWidth: d.originalWidth||d.width, originalHeight: d.originalHeight||d.height };
+                overlays.push(nd); createOverlayElement(nd);
+              }
+            });
+            updateCount(); saveToStorage(); showToast('📥 Diimpor ' + overlays.length + ' overlay');
+          } catch { showToast('⚠️ Format file tidak valid'); }
+        };
+        reader.readAsText(file);
+      }
+
+      function togglePanel() {
+        panelVisible = !panelVisible;
+        if (panelVisible) {
+          panel.classList.remove('hidden');
+          isDisplayMode = false;
+          document.body.classList.remove('display-mode');
+          indicator.textContent = 'Tekan H sembunyikan panel • Mode Edit';
+          btnTogglePanel.textContent = '👁️';
+        } else {
+          panel.classList.add('hidden');
+          isDisplayMode = true;
+          document.body.classList.add('display-mode');
+          indicator.textContent = 'Mode Display (OBS) • Tekan H untuk edit';
+          btnTogglePanel.textContent = '👁️‍🗨️';
+        }
+        localStorage.setItem('overlay_panel_v2', panelVisible ? 'show' : 'hide');
+      }
+
+      // Event binding
+      btnAdd.addEventListener('click', () => {
+        const type = typeSelect.value;
+        const url = urlInput.value.trim();
+        if (!url) { showToast('⚠️ Masukkan URL dulu'); return; }
+        addOverlay(type, url);
+        urlInput.value = '';
+        urlInput.focus();
+      });
+      urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnAdd.click(); });
+      btnFilePick.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', (e) => {
+        [...e.target.files].forEach(f => {
+          const blobUrl = URL.createObjectURL(f);
+          const type = f.type.startsWith('video') ? 'video' : 'image';
+          addOverlay(type, blobUrl, { label: '📁 ' + f.name, isLocalBlob: true, muted: type==='video'?true:false });
+        });
+        fileInput.value = '';
+      });
+      btnSave.addEventListener('click', () => { saveToStorage(); showToast('💾 Disimpan'); });
+      btnExport.addEventListener('click', exportConfig);
+      btnImport.addEventListener('click', () => importFileInput.click());
+      importFileInput.addEventListener('change', (e) => { if (e.target.files[0]) importConfig(e.target.files[0]); importFileInput.value = ''; });
+      btnReset.addEventListener('click', resetAll);
+      btnTogglePanel.addEventListener('click', togglePanel);
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'h' || e.key === 'H') {
+          if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'SELECT') return;
+          e.preventDefault(); togglePanel();
+        }
       });
 
-      // Cara 2: Kirim pesan ke iframe untuk minta izin suara (jika iframe mendengar)
-      setTimeout(function() {
-        iframes.forEach(function(iframe) {
-          try {
-            iframe.contentWindow.postMessage({ type: 'UNLOCK_AUDIO', command: 'play' }, '*');
-          } catch(e) {}
-        });
-      }, 500);
-
-      // Cara 3: OBS-specific - Trigger event klik virtual ke body
-      var evt = new MouseEvent('click', { bubbles: true, cancelable: true });
-      document.body.dispatchEvent(evt);
-      
-      console.log('[OA] 🔓 Auto-unlock audio telah dicoba. Jika masih tidak bersuara, aktifkan "Control audio via OBS" di Properties.');
-    }, 2000);
+      // Init
+      if (!loadFromStorage()) showToast('👋 Tambahkan overlay lewat URL atau file lokal');
+      const hideParam = new URLSearchParams(location.search).get('hide');
+      const savedPanel = localStorage.getItem('overlay_panel_v2');
+      if ((hideParam === '1' || savedPanel === 'hide') && panelVisible) togglePanel();
+      updateCount();
+      window.OverlayAggregator = { addOverlay, removeOverlay, bringToFront, sendToBack, toggleMute, resetAll, exportConfig, importConfig, togglePanel };
+    })();
+  </script>
+  <!-- ====== REMOTE CONFIG LOADER ====== -->
+<script>
+  (function loadRemoteConfig() {
+    // Jika ada parameter ?data= di URL, override OVERLAYS
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get('data');
+    if (data) {
+      try {
+        const decoded = atob(decodeURIComponent(data));
+        const parsed = JSON.parse(decoded);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Override OVERLAYS global (yang didefinisikan di config.js)
+          if (typeof window.OVERLAYS !== 'undefined') {
+            // Merge: tetap pakai yang dari URL, tapi tambahkan yang dari config jika belum ada
+            // Lebih baik: ganti total
+            window.OVERLAYS = parsed.map(o => ({
+              name: o.name || 'Overlay',
+              url: o.url || '',
+              enabled: true,
+              x: o.x || 0,
+              y: o.y || 0,
+              width: o.width || '100%',
+              height: o.height || '100%',
+              zIndex: o.zIndex || 1,
+              opacity: o.opacity || 1,
+              // Jika ada teks, kita akan proses di overlay.js (tapi overlay.js tidak support teks native)
+              // Kita akan handle teks dengan membuat iframe data:text/html
+              _text: o.text || ''
+            }));
+            console.log('[Remote] ✅ Config dari URL dimuat!', window.OVERLAYS.length, 'overlay');
+          }
+        }
+      } catch(e) {
+        console.warn('[Remote] Gagal parse data dari URL', e);
+      }
+    }
   })();
 </script>
-  <!-- Load konfigurasi dulu, baru engine -->
-  <script src="config.js"></script>
-  <script src="overlay.js"></script>
+<script>
+  (function initTouchGesture() {
+    let touchCount = 0;
+    let touchTimer = null;
 
+    document.addEventListener('touchstart', function(e) {
+      touchCount = e.touches.length; // hitung jari yang menyentuh layar
+
+      // Reset timer setiap kali sentuh
+      clearTimeout(touchTimer);
+
+      // Kalau tepat 4 jari, langsung eksekusi
+      if (touchCount === 4) {
+        e.preventDefault(); // biar gak trigger gesture lain
+        triggerEditor();
+      }
+    }, { passive: false });
+
+    function triggerEditor() {
+      // Panggil fungsi togglePanel yang sudah ada di index.html
+      if (typeof togglePanel === 'function') {
+        togglePanel();
+      } else {
+        // Fallback: coba cari tombol panel
+        const btn = document.getElementById('btnTogglePanel');
+        if (btn) btn.click();
+        console.log('🖐️ 4 jari terdeteksi!');
+      }
+    }
+    // Opsional: feedback visual saat 4 jari
+    console.log('🖐️ Gestur 4 jari aktif — sentuh layar dengan 4 jari untuk membuka editor.');
+  })();
+</script>
 </body>
 </html>
