@@ -803,60 +803,75 @@
 
       console.log('[Remote] 📦 Data dari URL ditemukan:', parsed.length, 'overlay');
 
-      // Hapus semua overlay yang sudah ada (agar tidak duplikat)
-      if (typeof resetAll === 'function') {
-        resetAll();
-      } else {
-        // Fallback: hapus manual
-        overlays.forEach(o => { if (o.isLocalBlob && o.url.startsWith('blob:')) URL.revokeObjectURL(o.url); });
-        overlays = [];
-        canvas.innerHTML = '';
-      }
-
-      // Tambahkan setiap overlay dari data URL
-      parsed.forEach((item, index) => {
-        // Tentukan type (default iframe)
-        let type = item.type || 'iframe';
-        let url = item.url || '';
-        // Jika ada teks dan tidak ada URL, buat data URL
-        if (!url && item.text) {
-          const html = `<!DOCTYPE html><html><head><style>
-            body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh;
-                   background:transparent; color:#fff; font-family:'Segoe UI',Arial,sans-serif;
-                   font-size:60px; font-weight:bold; text-shadow:0 0 30px rgba(0,0,0,0.9);
-                   text-align:center; padding:20px; word-break:break-word; }
-          </style></head><body>${item.text}</body></html>`;
-          url = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
-          type = 'iframe';
+      // Tunggu sampai window.OverlayAggregator siap (fungsi addOverlay tersedia)
+      function applyOverlays() {
+        if (typeof window.OverlayAggregator === 'undefined' || typeof window.OverlayAggregator.addOverlay !== 'function') {
+          console.warn('[Remote] Menunggu OverlayAggregator siap...');
+          setTimeout(applyOverlays, 100);
+          return;
         }
-        if (!url) return; // skip jika tetap kosong
 
-        // Panggil fungsi addOverlay yang sudah ada
-        if (typeof addOverlay === 'function') {
+        const { addOverlay, resetAll, removeOverlay } = window.OverlayAggregator;
+
+        // Hapus semua overlay yang ada (tanpa konfirmasi)
+        // Karena resetAll pakai confirm, kita bypass dengan menghapus satu per satu
+        // Ambil semua elemen overlay yang ada di canvas
+        const canvas = document.getElementById('overlay-canvas');
+        const existingItems = canvas.querySelectorAll('.overlay-item');
+        existingItems.forEach(el => {
+          const id = el.dataset.id;
+          if (id) removeOverlay(id);
+        });
+
+        // Tambahkan overlay dari URL
+        parsed.forEach((item, index) => {
+          let type = 'iframe'; // semua dari control.html adalah iframe
+          let url = item.url || '';
+          // Jika tidak ada URL tapi ada teks, buat data URL
+          if (!url && item.text) {
+            const html = `<!DOCTYPE html><html><head><style>
+              body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh;
+                     background:transparent; color:#fff; font-family:'Segoe UI',Arial,sans-serif;
+                     font-size:60px; font-weight:bold; text-shadow:0 0 30px rgba(0,0,0,0.9);
+                     text-align:center; padding:20px; word-break:break-word; }
+            </style></head><body>${item.text}</body></html>`;
+            url = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+          }
+          if (!url) return; // skip jika tetap kosong
+
+          // Siapkan opsi
           const opts = {
-            x: item.x || 0,
-            y: item.y || 0,
-            width: item.width || 380,
-            height: item.height || 280,
-            zIndex: item.zIndex || (20 + index),
-            muted: item.muted || false,
-            label: item.label || item.name || ('Overlay ' + (index+1)),
-            originalWidth: item.originalWidth || item.width || 380,
-            originalHeight: item.originalHeight || item.height || 280,
+            x: parseFloat(item.x) || 0,
+            y: parseFloat(item.y) || 0,
+            width: parseFloat(item.width) || 380,
+            height: parseFloat(item.height) || 280,
+            zIndex: parseInt(item.zIndex) || (20 + index),
+            muted: false,
+            label: item.name || ('Overlay ' + (index+1)),
+            originalWidth: parseFloat(item.width) || 380,
+            originalHeight: parseFloat(item.height) || 280,
           };
+
           // Panggil addOverlay
           addOverlay(type, url, opts);
-        } else {
-          console.warn('[Remote] Fungsi addOverlay belum siap, coba lagi nanti.');
-        }
-      });
+          console.log('[Remote] ✅ Ditambahkan:', item.name || url);
+        });
 
-      // Simpan ke localStorage agar persisten
-      setTimeout(() => {
-        if (typeof saveToStorage === 'function') saveToStorage();
-        if (typeof updateCount === 'function') updateCount();
-        console.log('[Remote] ✅ Semua overlay dari URL dimuat!');
-      }, 100);
+        // Simpan ke localStorage
+        setTimeout(() => {
+          if (typeof window.OverlayAggregator.saveToStorage === 'function') {
+            window.OverlayAggregator.saveToStorage();
+          }
+          console.log('[Remote] ✅ Semua overlay dari URL dimuat!');
+        }, 200);
+      }
+
+      // Jalankan applyOverlays setelah halaman dan semua script siap
+      if (document.readyState === 'complete') {
+        applyOverlays();
+      } else {
+        window.addEventListener('load', applyOverlays);
+      }
 
     } catch (e) {
       console.warn('[Remote] Gagal parse data URL:', e);
