@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Overlay Aggregator • Auto-URL</title>
+  <title>Overlay Aggregator • Bersih</title>
   <style>
     :root {
       --accent: #38bdf8;
@@ -31,6 +31,7 @@
       z-index: 1;
     }
 
+    /* Overlay item - TANPA OUTLINE SAMA SEKALI */
     .overlay-item {
       position: absolute;
       min-width: 40px;
@@ -38,16 +39,14 @@
       cursor: default;
       z-index: 10;
       background: transparent;
-      transition: outline 0.1s;
+      /* outline dihapus total */
     }
 
-    .overlay-item.edit-mode {
-      outline: 1px dashed rgba(255, 255, 255, 0.4);
-      outline-offset: 0px;
-    }
-
+    /* Tidak ada outline saat edit atau hover */
+    .overlay-item.edit-mode,
     .overlay-item.edit-mode:hover {
-      outline: 2px dashed rgba(255, 255, 255, 0.8);
+      outline: none !important;
+      box-shadow: none !important;
     }
 
     .drag-shield {
@@ -98,6 +97,7 @@
       object-fit: contain;
     }
 
+    /* Label kecil */
     .overlay-label {
       position: absolute;
       top: -22px;
@@ -120,6 +120,7 @@
       opacity: 1;
     }
 
+    /* Resize handles tetap muncul saat hover */
     .resize-handle {
       position: absolute;
       z-index: 35;
@@ -152,6 +153,7 @@
     .resize-handle.e { top: 50%; right: -7px; transform: translateY(-50%); width: 8px; height: 28px; border-radius: 4px; cursor: ew-resize; }
     .resize-handle.w { top: 50%; left: -7px; transform: translateY(-50%); width: 8px; height: 28px; border-radius: 4px; cursor: ew-resize; }
 
+    /* Tombol aksi kecil */
     .overlay-actions {
       position: absolute;
       top: 4px;
@@ -194,10 +196,7 @@
       background: rgba(220, 38, 38, 0.8);
     }
 
-    body.display-mode .overlay-item {
-      outline: none !important;
-    }
-
+    /* Mode display: hilangkan SEMUA elemen edit */
     body.display-mode .drag-shield,
     body.display-mode .resize-handle,
     body.display-mode .overlay-actions,
@@ -205,7 +204,7 @@
       display: none !important;
     }
 
-    /* Indikator kecil bahwa posisi tersimpan di URL */
+    /* Indikator kecil */
     #url-indicator {
       position: fixed;
       bottom: 16px;
@@ -285,7 +284,6 @@
         }
       }
 
-      // Perbarui URL hash tanpa reload halaman
       function updateHash() {
         const hash = encodePositionsToHash();
         if (window.location.hash.substring(1) !== hash) {
@@ -313,7 +311,7 @@
 
       function createOverlayElement(data) {
         const item = document.createElement('div');
-        item.className = 'overlay-item edit-mode';
+        item.className = 'overlay-item edit-mode'; // tetap ada kelas edit-mode untuk fungsionalitas
         item.dataset.id = data.id;
         item.style.left = data.x + 'px';
         item.style.top = data.y + 'px';
@@ -538,7 +536,7 @@
         clearTimeout(autoSaveTimeout);
         autoSaveTimeout = setTimeout(() => {
           updateHash();
-        }, 300); // debounce 300ms
+        }, 300);
       }
 
       // ================== INISIALISASI ==================
@@ -588,13 +586,11 @@
           createOverlayElement(overlayData);
         });
 
-        // Jika ada hash yang valid, tidak perlu update. Jika tidak, langsung encode.
         if (!window.location.hash) {
           updateHash();
         }
       }
 
-      // Mode display via ?display=1
       function checkDisplayMode() {
         if (new URLSearchParams(location.search).get('display') === '1') {
           isDisplayMode = true;
@@ -602,7 +598,6 @@
         }
       }
 
-      // Mulai
       initializeOverlays();
       checkDisplayMode();
 
