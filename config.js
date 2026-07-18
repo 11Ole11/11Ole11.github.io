@@ -68,8 +68,8 @@ window.OVERLAY_CONFIG = {
       name    : "Overlay Alert",
       url     : "https://sociabuzz.com/pro/tribe/mediashare/v2/7264966058?colorName=%2300ff00&alphaName=1&colorNote=%23ffff00&alphaNote=1&colorFrom=%23eeeeee&alphaFrom=1&mediashareActive=1&mediashareTTS=1&font=Open%2BSans%3A800&mediashareNSFW=0",        // ← Tempel URL overlay alert kamu di sini
       enabled : true,     // ← Ganti ke true untuk mengaktifkan
-      x       : 1920,
-      y       : 1089,
+      x       : 0,
+      y       : 0,
       width   : "100%",   // Fullscreen lebar
       height  : "100%",   // Fullscreen tinggi
       opacity : 1,
