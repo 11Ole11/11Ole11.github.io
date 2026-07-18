@@ -1,243 +1,198 @@
-# OverlayHub v1.0
+# Transparent Overlay Aggregator v1.0
 
-> Gabungkan semua overlay livestream kamu dalam **satu file HTML transparan**.  
-> Satu Browser Source di OBS. Semua overlay berjalan bersamaan.
+> Gabungkan **banyak overlay livestream** menjadi **satu Browser Source** di OBS Studio, PRISM Live, atau Streamlabs — tanpa server, tanpa instalasi, 100% offline.
 
 ---
 
-## 🚀 Cara Penggunaan Cepat
+## Struktur File
+
+```
+TransparentOverlayAggregator/
+│
+├── index.html   ← Tambahkan ini ke OBS sebagai Browser Source
+├── config.js    ← EDIT INI untuk menambah/mengubah overlay
+├── overlay.js   ← Engine utama (jangan diedit)
+├── style.css    ← Stylesheet transparan (jangan diedit)
+└── README.md    ← Panduan ini
+```
+
+---
+
+## Cara Penggunaan
 
 ### Langkah 1 — Edit Konfigurasi
 
-Buka `js/config.js` dengan text editor (Notepad, VS Code, Notepad++, dll.)
+Buka `config.js` menggunakan **Notepad**, **VSCode**, atau teks editor apa pun.
 
-Cari overlay yang ingin diaktifkan, isi URL-nya, lalu ganti `enabled: false` menjadi `enabled: true`:
+Isi `url` pada setiap overlay yang ingin diaktifkan:
 
-```javascript
+```js
 {
-  name    : "Overlay Alert",
-  url     : "https://url-overlay-kamu.com/alert",  // ← Isi URL di sini
-  enabled : true,                                   // ← Aktifkan
-  x       : 0,
-  y       : 0,
-  width   : "100%",
-  height  : "100%",
-  opacity : 1,
-  rotate  : 0,
-  scale   : 1,
-  z       : 100,
-  css     : ""
-}
+  name    : "Sociabuzz Alert 1",
+  url     : "https://link-overlay-sociabuzz-anda.com",  // ← isi di sini
+  enabled : true,                                        // ← set ke true
+  x: 0,  y: 0,
+  width: "100%",  height: "100%",
+  zIndex: 10,  opacity: 1
+},
 ```
 
-### Langkah 2 — Tambahkan ke OBS
+### Langkah 2 — Simpan config.js
+
+Simpan file setelah selesai mengedit.
+
+### Langkah 3 — Tambahkan ke OBS
 
 1. Buka **OBS Studio**
-2. Di panel **Sources**, klik tombol **+** → pilih **Browser**
-3. Beri nama (misal: "OverlayHub"), klik **OK**
-4. Centang **Local File**
-5. Klik **Browse** → pilih file **index.html** dari folder OverlayHub
-6. Set **Width**: `1920`, **Height**: `1080`
-7. Di kolom **Custom CSS**, isi:
-   ```css
-   body { background-color: rgba(0, 0, 0, 0) !important; }
-   ```
-8. Klik **OK**
+2. Di panel **Sources**, klik tombol **+**
+3. Pilih **Browser**
+4. Beri nama (contoh: `Overlay Aggregator`)
+5. Centang **Local File**
+6. Klik **Browse** → pilih file `index.html`
+7. Atur **Width: 1920** dan **Height: 1080** (sesuaikan resolusi Anda)
+8. Centang **Shutdown source when not visible**
+9. Klik **OK**
 
-### Langkah 3 — Selesai!
-
-Semua overlay yang diaktifkan akan tampil dalam satu Browser Source.  
-Setiap kali kamu mengubah `config.js`, klik kanan Browser Source → **Refresh**.
+> Source ini sudah transparan secara otomatis — tidak perlu setting Chroma Key.
 
 ---
 
-## 📋 Properti Overlay
+## Parameter Overlay di config.js
 
-| Properti  | Tipe           | Default  | Keterangan |
-|-----------|----------------|----------|------------|
-| `name`    | string         | -        | Nama untuk referensi (tidak tampil di stream) |
-| `url`     | string         | -        | URL layanan overlay **[WAJIB]** |
-| `enabled` | boolean        | false    | `true` = aktif, `false` = dilewati |
-| `x`       | number         | 0        | Jarak dari kiri layar (pixel) |
-| `y`       | number         | 0        | Jarak dari atas layar (pixel) |
-| `width`   | number\|string | `"100%"` | Lebar: pixel (`400`) atau persen (`"100%"`) |
-| `height`  | number\|string | `"100%"` | Tinggi: pixel (`300`) atau persen (`"100%"`) |
-| `opacity` | number         | 1        | Transparansi: `0.0` = tak terlihat, `1.0` = penuh |
-| `rotate`  | number         | 0        | Rotasi dalam derajat |
-| `scale`   | number         | 1        | Skala: `1.0` = normal, `0.5` = 50%, `2.0` = 200% |
-| `z`       | number         | 1        | Z-index: angka lebih besar = tampil di depan |
-| `css`     | string         | `""`     | CSS tambahan (`filter`, `brightness`, dll.) |
+| Parameter | Tipe           | Contoh        | Keterangan                              |
+|-----------|----------------|---------------|-----------------------------------------|
+| `name`    | string         | `"Sociabuzz"` | Nama pengenal (bebas, untuk referensi)  |
+| `url`     | string         | `"https://…"` | Link overlay dari platform              |
+| `enabled` | boolean        | `true`        | `true` = aktif, `false` = nonaktif      |
+| `x`       | number (px)    | `0`           | Posisi horizontal dari kiri             |
+| `y`       | number (px)    | `0`           | Posisi vertikal dari atas               |
+| `width`   | string/number  | `"100%"`      | Lebar: `"100%"` atau angka px           |
+| `height`  | string/number  | `"100%"`      | Tinggi: `"100%"` atau angka px          |
+| `zIndex`  | number         | `10`          | Layer urutan (lebih besar = di depan)   |
+| `opacity` | number (0–1)   | `1`           | Transparansi: `0` = invisible, `1` = penuh |
 
 ---
 
-## 📐 Panduan Posisi (Resolusi 1920×1080)
+## Contoh Konfigurasi
 
-```
-(0,0) ─────────────────────────────── (1920,0)
-  │                                        │
-  │   Pojok kiri atas   Pojok kanan atas   │
-  │   x:0, y:0          x:1720, y:0        │
-  │                                        │
-  │         Tengah: x:760, y:390           │
-  │                                        │
-  │   Pojok kiri bawah  Pojok kanan bawah  │
-  │   x:0, y:880        x:1720, y:880      │
-  │                                        │
-(0,1080) ─────────────────────────── (1920,1080)
-```
-
-**Contoh posisi umum:**
-
-| Layout                    | x    | y    | width | height |
-|---------------------------|------|------|-------|--------|
-| Fullscreen (Alert, Media) | 0    | 0    | "100%" | "100%" |
-| Chat kanan                | 1520 | 0    | 400   | 1080   |
-| Chat kiri                 | 0    | 0    | 400   | 1080   |
-| Bar bawah (Ticker)        | 0    | 980  | 1920  | 100    |
-| Bar atas (Goal)           | 760  | 0    | 400   | 80     |
-| Pojok kiri bawah (Gift)   | 0    | 600  | 400   | 480    |
-| Pojok kanan atas (Logo)   | 1720 | 20   | 200   | 60     |
-
----
-
-## 🎨 Contoh CSS Tambahan
-
-Property `css` mendukung semua CSS filter dan property standar:
-
-```javascript
-// Drop shadow
-css: "filter: drop-shadow(0 4px 16px rgba(0,0,0,0.6));"
-
-// Brightness & contrast
-css: "filter: brightness(1.2) contrast(1.1);"
-
-// Blur (misal overlay background)
-css: "filter: blur(4px);"
-
-// Kombinasi
-css: "filter: brightness(0.9) drop-shadow(0 2px 8px rgba(0,0,0,0.5));"
-```
-
----
-
-## 💻 Penggunaan di Software Streaming Lain
-
-### PRISM Live Studio
-1. Tambahkan Source → **Browser Source**
-2. Mode: **Local File** → pilih `index.html`
-3. Aktifkan **Chroma Key** / **Background Transparent**
-
-### Streamlabs Desktop
-1. Tambahkan Source → **Browser Source**
-2. Centang **Local File** → pilih `index.html`
-3. Custom CSS: `body { background: transparent !important; }`
-
-### vMix
-1. Add Input → **Web Browser**
-2. URL: masukkan path file `index.html` (misal: `file:///C:/OverlayHub/index.html`)
-3. Pastikan resolusi sesuai
-
-### XSplit Broadcaster
-1. Add Source → **Webpage**
-2. Mode: **Local**
-3. Pilih `index.html`
-
----
-
-## 🛠️ Debug & Troubleshooting
-
-### Aktifkan Mode Debug
-
-Di `js/config.js`, ubah `debug: false` menjadi `debug: true`:
-```javascript
-settings: {
-  debug: true
+### Alert penuh layar (default)
+```js
+{
+  name: "Sociabuzz Alert 1",
+  url : "https://link-overlay-anda.com",
+  enabled: true,
+  x: 0, y: 0,
+  width: "100%", height: "100%",
+  zIndex: 10, opacity: 1
 }
 ```
 
-Buka **DevTools** (F12 di OBS: klik kanan Browser Source → **Interact** → F12),  
-lalu lihat tab **Console** untuk log detail.
-
-### Perintah Debug di Console
-
-```javascript
-OverlayHub.list()     // Tampilkan semua overlay beserta status
-OverlayHub.reload()   // Render ulang semua overlay
-OverlayHub.destroy()  // Hapus semua overlay dari layar
-OverlayHub.config()   // Tampilkan konfigurasi aktif
+### Chat box kiri bawah
+```js
+{
+  name: "Chat Overlay",
+  url : "https://link-chat-anda.com",
+  enabled: true,
+  x: 20, y: 400,
+  width: 400, height: 600,
+  zIndex: 5, opacity: 0.95
+}
 ```
 
-### Masalah Umum
-
-| Masalah | Kemungkinan Penyebab | Solusi |
-|---------|----------------------|--------|
-| Background tidak transparan | Custom CSS belum diisi | Isi `body { background-color: rgba(0,0,0,0) !important; }` di OBS |
-| Overlay tidak muncul | `enabled: false` | Ganti ke `enabled: true` |
-| Overlay tidak muncul | URL kosong | Isi URL yang valid di `url: ""` |
-| Overlay ditimpa overlay lain | Z-index terlalu rendah | Naikkan nilai `z` |
-| Overlay keluar dari layar | Posisi x/y terlalu besar | Periksa nilai x dan y |
-| iframe diblokir di browser biasa | X-Frame-Options dari layanan | Normal — coba di OBS langsung |
-
----
-
-## 📁 Struktur Folder
-
-```
-OverlayHub/
-├── index.html               ← Buka di OBS Browser Source
-│
-├── css/
-│   └── style.css            ← Gaya dasar (jangan diubah)
-│
-├── js/
-│   ├── config.js            ← ⚙️ EDIT INI untuk tambah overlay
-│   ├── utils.js             ← Fungsi pembantu & validasi
-│   ├── layoutManager.js     ← Logika posisi & transform CSS
-│   ├── overlayManager.js    ← Logika pembuatan & render iframe
-│   └── script.js            ← Entry point aplikasi
-│
-├── assets/
-│   ├── icon/                ← Ikon (untuk pengembangan masa depan)
-│   └── image/               ← Gambar aset (untuk pengembangan masa depan)
-│
-├── profiles/                ← Template profil (untuk Fase 2)
-│   ├── default.json
-│   ├── gaming.json
-│   └── tiktok.json
-│
-└── README.md                ← Dokumentasi ini
+### Goal bar bawah layar (resolusi 1920×1080)
+```js
+{
+  name: "Goal Bar",
+  url : "https://link-goal-anda.com",
+  enabled: true,
+  x: 0, y: 980,
+  width: "100%", height: 100,
+  zIndex: 8, opacity: 1
+}
 ```
 
 ---
 
-## 🔄 Rencana Pengembangan
+## Menonaktifkan Overlay Sementara
 
-| Fase | Status | Fitur |
-|------|--------|-------|
-| **Fase 1** | ✅ Selesai | Offline, config via `config.js`, semua overlay tampil di satu halaman |
-| **Fase 2** | 🔜 Berikutnya | Editor visual, impor/ekspor profil JSON, drag & drop posisi |
-| **Fase 3** | 📋 Direncanakan | Dashboard web, akun pengguna, cloud sync, berbagi preset |
+Ubah `enabled: true` menjadi `enabled: false` — URL tetap tersimpan.
 
----
-
-## ⚙️ Persyaratan Sistem
-
-- **OS**: Windows 10/11 (atau macOS/Linux)
-- **Browser**: Google Chrome, Microsoft Edge, atau browser berbasis Chromium
-- **Software Streaming**: OBS Studio 27+, PRISM Live, Streamlabs Desktop, vMix, XSplit
-- **Resolusi**: 1920×1080 (default), mendukung 720p, 1440p, 4K
-
-**Tidak memerlukan:**
-- Node.js, NPM, PHP, Python
-- Database atau server lokal
-- Koneksi internet *(kecuali URL overlay dari layanan online)*
+```js
+{
+  name    : "TikFinity Alert 3",
+  url     : "https://link-anda.com",
+  enabled : false,   // ← nonaktif sementara
+  ...
+}
+```
 
 ---
 
-## 📄 Lisensi
+## Menambah Overlay Baru
 
-MIT License — bebas digunakan, dimodifikasi, dan didistribusikan.
+Tambahkan objek baru di akhir array `OVERLAYS` dalam `config.js`:
+
+```js
+const OVERLAYS = [
+  // ... overlay yang sudah ada ...
+
+  // ← tambahkan di sini
+  {
+    name    : "Overlay Baru Saya",
+    url     : "https://link-overlay-baru.com",
+    enabled : true,
+    x: 0, y: 0,
+    width: "100%", height: "100%",
+    zIndex: 50, opacity: 1
+  },
+];
+```
 
 ---
 
-*OverlayHub v1.0 — Dibuat untuk streamer Indonesia 🇮🇩*
+## Debug Mode
+
+Aktifkan untuk melihat status semua overlay saat setup:
+
+```js
+const CONFIG = {
+  debug: true,   // ← ubah ke true
+  lazyLoadDelay: 150
+};
+```
+
+Buka `index.html` di browser biasa — panel debug akan muncul di pojok kanan atas berisi:
+- Daftar overlay (🟢 = URL terisi, ⚫ = URL kosong)
+- Counter loaded / error / skip
+
+> **⚠️ Penting:** Set `debug: false` sebelum mulai streaming!
+
+---
+
+## Tips Performa
+
+- **zIndex unik**: Beri zIndex berbeda pada setiap overlay agar tidak ada konflik layer.
+- **lazyLoadDelay**: Naikkan ke 200–300ms jika koneksi lambat atau banyak overlay aktif.
+- **Monitor RAM**: Setiap iframe memakan RAM. Pantau Task Manager jika 20+ overlay aktif.
+- **Refresh OBS**: Setelah mengedit config.js, klik kanan source di OBS → **Refresh**.
+- **CORS**: Beberapa overlay mungkin memblokir pemuatan iframe. Uji di browser dulu.
+
+---
+
+## Persyaratan
+
+- ✅ OBS Studio / PRISM Live Studio / Streamlabs Desktop (Browser Source)
+- ✅ Tidak perlu instalasi tambahan
+- ✅ Tidak perlu koneksi internet (kecuali URL overlay memerlukan akses online)
+- ✅ 100% offline — HTML statis murni
+
+---
+
+## Checklist Sebelum Streaming
+
+- [ ] URL semua overlay sudah diisi di `config.js`
+- [ ] `enabled: true` pada overlay yang ingin aktif
+- [ ] `debug: false` di bagian CONFIG
+- [ ] File `index.html` sudah ditambahkan ke OBS Browser Source
+- [ ] Ukuran Browser Source sesuai resolusi streaming (1920×1080)
+- [ ] Test dulu di browser biasa sebelum live

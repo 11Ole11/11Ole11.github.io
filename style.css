@@ -1,100 +1,62 @@
 /* ================================================================
-   OverlayHub v1.0 — style.css
-   
-   ATURAN UTAMA:
-   - Semua elemen HARUS transparan (OBS Browser Source)
-   - Semua elemen TIDAK menangkap klik (pointer-events: none)
-   - Tidak ada scrollbar, tidak ada overflow
+   TRANSPARENT OVERLAY AGGREGATOR v1.0 — style.css
+   Core styles untuk canvas transparan OBS Browser Source
+   ⚠️  Jangan edit kecuali Anda tahu yang Anda lakukan
    ================================================================ */
 
-
-/* ── Reset Minimal ─────────────────────────────────────────────── */
-*,
-*::before,
-*::after {
+/* Reset global */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-
-/* ── Transparansi Utama ─────────────────────────────────────────── */
-/*
-  !important diperlukan agar tidak ditimpa oleh CSS bawaan browser.
-  OBS juga memerlukan ini untuk render transparan yang benar.
-*/
-html,
-body {
-  background-color: transparent !important;
+/* Pastikan background benar-benar transparan */
+html {
   background: transparent !important;
+  background-color: transparent !important;
   overflow: hidden;
   width: 100%;
   height: 100%;
-  /* Cegah seleksi teks yang tidak perlu */
-  user-select: none;
-  -webkit-user-select: none;
-  /* Cegah context menu klik kanan */
-  -webkit-touch-callout: none;
 }
 
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  background-color: transparent !important;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
 
-/* ── Container Utama ─────────────────────────────────────────────── */
-/*
-  #overlay-container adalah kanvas utama tempat semua iframe dimuat.
-  Menggunakan position: fixed agar selalu menutupi seluruh viewport.
-*/
-#overlay-container {
+/* Canvas utama: seluruh viewport */
+#overlay-canvas {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  /* Container tidak menangkap klik */
-  pointer-events: none;
-  /* Semua overlay yang melampaui batas viewport dipotong */
+  background: transparent;
   overflow: hidden;
+  pointer-events: none;
 }
 
-
-/* ── Wrapper Setiap Overlay ──────────────────────────────────────── */
-/*
-  .overlay-wrapper membungkus setiap iframe.
-  Posisi, ukuran, z-index, opacity, dan transform
-  diterapkan via JavaScript (layoutManager.js).
-*/
+/* Wrapper per overlay */
 .overlay-wrapper {
   position: absolute;
-  /* Click-through: tidak menangkap klik mouse */
-  pointer-events: none;
-  /* Potong konten yang melampaui batas wrapper */
+  background: transparent;
   overflow: hidden;
-  /* Optimasi render GPU untuk performa tinggi */
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  will-change: transform;
-  /* Buat stacking context baru untuk z-index yang benar */
-  isolation: isolate;
+  pointer-events: none;
 }
 
-
-/* ── iframe di Dalam Setiap Overlay ─────────────────────────────── */
-/*
-  .overlay-iframe adalah iframe yang memuat URL overlay.
-  Selalu mengisi penuh wrapper-nya.
-*/
-.overlay-iframe {
+/* Iframe per overlay */
+.overlay-frame {
   display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
-  /* Hilangkan border default iframe */
-  border: 0;
-  /* Transparansi iframe */
-  background-color: transparent;
-  /* Click-through */
+  border: none;
+  outline: none;
+  background: transparent;
   pointer-events: none;
-  /* Sembunyikan scrollbar jika konten overflow */
-  overflow: hidden;
 }
