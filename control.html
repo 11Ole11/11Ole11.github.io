@@ -345,21 +345,16 @@
 
     // ─── URL ENCODE ────────────────────────────────────────────
     function updateURL() {
-      const json = JSON.stringify(overlays);
-      const encoded = btoa(encodeURIComponent(json));
-      const url = window.location.origin + window.location.pathname + '?data=' + encoded;
-      document.getElementById('share-url').textContent = url;
-      // Simpan di localStorage juga
-      localStorage.setItem('oa_remote_overlays', json);
-      // Update URL bar tanpa reload (history)
-      try {
-        window.history.replaceState({}, '', '?data=' + encoded);
-      } catch(e) {}
-    }
-
-    function saveLocal() {
-      localStorage.setItem('oa_remote_overlays', JSON.stringify(overlays));
-    }
+  const json = JSON.stringify(overlays);
+  const encoded = btoa(encodeURIComponent(json));
+  // 👇 GANTI pathname menjadi /index.html
+  const url = window.location.origin + '/index.html?data=' + encoded;
+  document.getElementById('share-url').textContent = url;
+  localStorage.setItem('oa_remote_overlays', json);
+  try {
+    window.history.replaceState({}, '', '?data=' + encoded);
+  } catch(e) {}
+}
 
     // ─── TOMBOL ACTION ─────────────────────────────────────────
     function applyToDisplay() {
